@@ -327,9 +327,9 @@ class PlayState extends FlxState {
 	}
 
 	/**
-	 * This function `kill()`s, `clear()`s, and then `revive()`s the groups passed in the array.
+	 * This function `kill()`s, `clear()`s, and `revive()`s the passed `FlxGroup`s.
 	 *
-	 * It's mostly used when re generating the world.
+	 * It's mostly used when re-generating the world.
 	 *
 	 * I think doing this resets the groups and it helped fix a bug with collision when regenerating the map.
 	 * If you read this and you know that I could do this better please let me know!
