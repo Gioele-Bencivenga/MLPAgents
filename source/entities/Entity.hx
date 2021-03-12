@@ -78,7 +78,7 @@ class Entity extends FlxSprite {
 		super.update(elapsed);
 
 		if (FlxG.keys.pressed.W) {
-			body.push(100, true); // is this bugged?
+			body.push(100, true);
 		}
 
 		if (FlxG.keys.pressed.A) {
