@@ -78,7 +78,7 @@ class Entity extends FlxSprite {
 		super.update(elapsed);
 
 		if (FlxG.keys.pressed.W) {
-			body.push(100, true);
+			body.push(100, true); // wait for fix or find out why dev version crashes then swap sin/cos
 		}
 
 		if (FlxG.keys.pressed.A) {
