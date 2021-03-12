@@ -1,5 +1,6 @@
 package entities;
 
+import flixel.FlxG;
 import echo.Body;
 import hxmath.math.MathUtil;
 import flixel.math.FlxVector;
@@ -49,6 +50,11 @@ class Entity extends FlxSprite {
 	 */
 	var maxReactionSpeed:Float;
 
+	/**
+	 * Reference to this entity's physics body.
+	 */
+	public var body:Body;
+
 	public function new(_x:Float, _y:Float, _width:Int, _height:Int, _color:Int) {
 		super(_x, _y);
 		makeGraphic(_width, _height, _color);
@@ -57,9 +63,7 @@ class Entity extends FlxSprite {
 		maxSpeed = 350;
 		maxReactionSpeed = 5000;
 
-		desiredDirection = new Vector2(0, 0);
-		direction = new Vector2(0, 0);
-
+		/// BODY
 		this.add_body({
 			mass: 1,
 			drag_length: 10,
@@ -67,21 +71,23 @@ class Entity extends FlxSprite {
 			max_velocity_length: Entity.MAX_VELOCITY,
 			max_rotational_velocity: Entity.MAX_ROTATIONAL_VELOCITY,
 		}).bodyType = 2; // info returned by environment sensors
+		body = this.get_body();
 	}
 
 	override function update(elapsed:Float) {
 		super.update(elapsed);
 
-		if (canMove)
-			handleMovement();
-	}
+		if (FlxG.keys.pressed.W) {
+			body.push(100, true); // is this bugged?
+		}
 
-	function handleMovement() {
-		direction = desiredDirection - this.get_body().velocity;
-		direction.clamp(0, maxReactionSpeed);
-
-		this.get_body().push(direction.x, direction.y);
-		this.get_body().rotation = MathUtil.radToDeg(this.get_body().velocity.angle); // we have to convert radians to degrees
+		if (FlxG.keys.pressed.A) {
+			body.rotational_velocity = -50;
+		} else if (FlxG.keys.pressed.D) {
+			body.rotational_velocity = 50;
+		} else{
+			body.rotational_velocity = 0;
+		}
 	}
 
 	/**
@@ -89,6 +95,7 @@ class Entity extends FlxSprite {
 	 */
 	override function kill() {
 		super.kill();
-		this.get_body().remove_body();
+		body.remove_body();
+		//body.dispose(); is this needed?
 	}
 }

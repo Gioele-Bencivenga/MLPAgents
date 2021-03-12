@@ -54,7 +54,7 @@ class MLP {
 	public var learningRate(default, null):Float;
 
 	/**
-	 * Creates a new `Perceptron` instance and initializes each neuron to random values between -1 and 1 inclusive.
+	 * Creates a new `MLP` instance and initializes each neuron to random values between -1 and 1 inclusive.
 	 * @param _inputLayerSize the number of neurons that the `inputLayer` will have
 	 */
 	public function new(_inputLayerSize:Int, _hiddenLayerSize:Int, _outputLayerSize:Int) {
@@ -72,9 +72,9 @@ class MLP {
 	}
 
 	/**
-	 * Feed the input forward through the network
+	 * Feed the input forward through the network.
 	 * 
-	 * Optimize with matrix multiplication in the future if needed
+	 * Optimize with matrix multiplication in the future if needed.
 	 */
 	public function feedForward() {
 		var wc:Int = 0; // weights counter
