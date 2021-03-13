@@ -1,5 +1,7 @@
 package entities;
 
+import utilities.HxFuncs;
+import flixel.util.helpers.FlxRange;
 import flixel.FlxG;
 import echo.Body;
 import hxmath.math.MathUtil;
@@ -18,17 +20,12 @@ class Entity extends FlxSprite {
 	/**
 	 * Maximum rotational velocity that this `Entity`'s physics body can reach.
 	 */
-	public static inline final MAX_ROTATIONAL_VELOCITY = 1000;
+	public static inline final MAX_ROTATIONAL_VELOCITY = 500;
 
 	/**
-	 * The desired velocity vector this `Entity` has regarding the target it wants to reach.
+	 * Reference to this entity's physics body.
 	 */
-	var desiredDirection:Vector2;
-
-	/**
-	 * The actual direction of the `Entity`, calculated from subtracting the desired and actual velocity of this entity.
-	 */
-	var direction:Vector2;
+	public var body:Body;
 
 	/**
 	 * Whether the `Entity` can move or not.
@@ -36,38 +33,32 @@ class Entity extends FlxSprite {
 	var canMove:Bool;
 
 	/**
-	 * Whether the `Entity` is moving or not.
+	 * `start` = min move speed (set as negative to go backwards)
+	 * 
+	 * `end` = max move speed
 	 */
-	var isMoving:Bool;
+	var moveRange:FlxRange<Float>;
 
 	/**
-	 * Maximum speed an `Entity` can move at.
+	 * `start` = max anticlockwise rotation speed
+	 * 
+	 * `end` = max clockwise rotation speed
 	 */
-	var maxSpeed:Float;
-
-	/**
-	 * Maximum speed at which the `Entity` is able to react to vector changes.
-	 */
-	var maxReactionSpeed:Float;
-
-	/**
-	 * Reference to this entity's physics body.
-	 */
-	public var body:Body;
+	var rotationRange:FlxRange<Float>;
 
 	public function new(_x:Float, _y:Float, _width:Int, _height:Int, _color:Int) {
 		super(_x, _y);
 		makeGraphic(_width, _height, _color);
 
 		canMove = true;
-		maxSpeed = 350;
-		maxReactionSpeed = 5000;
+		moveRange = new FlxRange<Float>(-50, 100);
+		rotationRange = new FlxRange<Float>(-15, 15);
 
 		/// BODY
 		this.add_body({
 			mass: 1,
 			drag_length: 10,
-			rotational_drag: 5,
+			rotational_drag: 20,
 			max_velocity_length: Entity.MAX_VELOCITY,
 			max_rotational_velocity: Entity.MAX_ROTATIONAL_VELOCITY,
 		}).bodyType = 2; // info returned by environment sensors
@@ -77,17 +68,41 @@ class Entity extends FlxSprite {
 	override function update(elapsed:Float) {
 		super.update(elapsed);
 
-		if (FlxG.keys.pressed.W) {
-			body.push(100, true); // wait for fix or find out why dev version crashes then swap sin/cos
-		}
+		/*
+			if (FlxG.keys.pressed.W) {
+				body.push(100, true); // wait for fix or find out why dev version crashes then swap sin/cos
+			}
 
-		if (FlxG.keys.pressed.A) {
-			body.rotational_velocity = -50;
-		} else if (FlxG.keys.pressed.D) {
-			body.rotational_velocity = 50;
-		} else{
-			body.rotational_velocity = 0;
-		}
+			if (FlxG.keys.pressed.A) {
+				body.rotational_velocity = -50;
+			} else if (FlxG.keys.pressed.D) {
+				body.rotational_velocity = 50;
+			} else {
+				body.rotational_velocity = 0;
+			}
+		 */
+	}
+
+	/**
+	 * Pushes a `body` forward/backward along its axis based on the mapped value of `_moveAmount`.
+	 * 
+	 * @param _moveAmount how much to move forward or backwards (-1 to 1)
+	 */
+	public function move(_moveAmount:Float) {
+		var mappedMoveAmt = HxFuncs.map(_moveAmount, -1, 1, moveRange.start, moveRange.end);
+
+		body.push(mappedMoveAmt, true);
+	}
+
+	/**
+	 * Rotates a `body` left/right based on the mapped value of `_rotationAmount`.
+	 * 
+	 * @param _rotationAmount how much to rotate left or right (-1 to 1)
+	 */
+	public function rotate(_rotationAmount:Float) {
+		var mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
+
+		body.rotational_velocity += mappedRotationAmt;
 	}
 
 	/**
@@ -96,6 +111,6 @@ class Entity extends FlxSprite {
 	override function kill() {
 		super.kill();
 		body.remove_body();
-		//body.dispose(); is this needed?
+		// body.dispose(); is this needed?
 	}
 }

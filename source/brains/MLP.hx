@@ -8,9 +8,7 @@ import flixel.FlxG;
  */
 class MLP {
 	/**
-	 * The Perceptron's input layer.
-	 *
-	 * Specify the number of neurons when creating a new instance, each neuron's values is randomly assigned.
+	 * The perceptron's input layer.
 	 */
 	public var inputLayer(default, null):Array<Float>;
 
@@ -49,17 +47,17 @@ class MLP {
 	var weightsCount:Int;
 
 	/**
-	 * The rate at which the `Perceptron` learns.
-	 */
-	public var learningRate(default, null):Float;
-
-	/**
 	 * Creates a new `MLP` instance and initializes each neuron to random values between -1 and 1 inclusive.
+	 * 
+	 * All of the `weights` (connections) between neurons are also randomly generated.
+	 * 
 	 * @param _inputLayerSize the number of neurons that the `inputLayer` will have
+	 * @param _hiddenLayerSize the number of neurons that the `hiddenLayer` will have
+	 * @param _outputLayerSize the number of neurons that the `outputLayer` will have
 	 */
 	public function new(_inputLayerSize:Int, _hiddenLayerSize:Int, _outputLayerSize:Int) {
-		// initialise layers with neurons having random values
-		inputLayer = [for (i in 0..._inputLayerSize) FlxG.random.float(-1, 1)];
+		// initialise layers of neurons
+		inputLayer = [for (i in 0..._inputLayerSize) 0]; // not needed anymore?
 		hiddenLayer = [for (i in 0..._hiddenLayerSize) FlxG.random.float(-1, 1)];
 		outputLayer = [for (i in 0..._outputLayerSize) FlxG.random.float(-1, 1)];
 		// initialise lists of outputs with 0s
@@ -75,14 +73,17 @@ class MLP {
 	 * Feed the input forward through the network.
 	 * 
 	 * Optimize with matrix multiplication in the future if needed.
+	 * 
+	 * @param _inputLayer the raw input data that the network will process, values must be between -1 and 1
+	 * @return the array of outputs produced by the network, each output ranging from -1 to 1 inclusive
 	 */
-	public function feedForward() {
+	public function feedForward(_inputLayer:Array<Float>):Array<Float> {
 		var wc:Int = 0; // weights counter
 
 		for (i in 0...hiddenLayer.length) {
 			var sum:Float = 0;
-			for (j in 0...inputLayer.length) {
-				sum += inputLayer[j] * weights[wc++];
+			for (j in 0..._inputLayer.length) {
+				sum += _inputLayer[j] * weights[wc++];
 			}
 			hiddenOutputs[i] = HxFuncs.tanh(sum);
 		}
@@ -94,5 +95,7 @@ class MLP {
 			}
 			outputOutputs[i] = HxFuncs.tanh(sum);
 		}
+
+		return outputOutputs;
 	}
 }

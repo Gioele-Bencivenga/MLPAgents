@@ -67,6 +67,13 @@ class AutoEntity extends Entity {
 	 */
 	public var isCamTarget:Bool;
 
+	/**
+	 * The current inputs that are being fed to the `MLP`.
+	 * 
+	 * These values have already been mapped to a range between -1 and 1.
+	 */
+	var brainInputs:Array<Float>;
+
 	public function new(_x:Float, _y:Float, _width:Int, _height:Int, _color:Int) {
 		super(_x, _y, _width, _height, _color);
 
@@ -122,16 +129,22 @@ class AutoEntity extends Entity {
 		senserTimer.start(SENSORS_TICK, (_) -> sense(), 0);
 
 		brain = new MLP(6, 4, 2);
+
+		brainInputs = [for (i in 0...brain.inputLayer.length) 0];
 	}
 
 	override function update(elapsed:Float) {
 		super.update(elapsed);
+		act();
 	}
 
 	/**
 	 * Get information about the environment from the sensors.
+	 * 
+	 * Called periodically by the `senserTimer`.
 	 */
 	function sense() {
+		var sensorInputs = [for (i in 0...brain.inputLayer.length) 0.];
 		// we need an array of bodies for the linecast
 		var bodiesArray:Array<Body> = PlayState.collidableBodies.get_group_bodies();
 
@@ -151,6 +164,7 @@ class AutoEntity extends Entity {
 			// cast the line, returning all intersections
 			var hit = sensors[i].linecast(bodiesArray);
 			if (hit != null) { // if we hit something
+				sensorInputs[i] = hit.body.bodyType; // put it in the array
 				var lineColor = FlxColor.RED;
 				switch (hit.body.bodyType) {
 					case 1: // hit a Tile (wall)
@@ -165,11 +179,27 @@ class AutoEntity extends Entity {
 				if (isCamTarget)
 					DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y, lineColor, 1.5);
 			} else { // if we didn't hit anything
+				sensorInputs[i] = 0; // reflect it in the array
 				if (isCamTarget)
 					DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y);
 			}
 			sensors[i].put();
 		}
+		// put mapped inputs into array
+		// we only update the sensors each sense(),
+		// but the MLP keeps processing inputs
+		brainInputs = [
+			for (input in sensorInputs)
+				HxFuncs.map(input, 0, 3, -1, 1)
+		];
+	}
+
+	function act() {
+		// decide how to act based on current inputs
+		var brainOutputs = brain.feedForward(brainInputs);
+
+		move(brainOutputs[0]);
+		rotate(brainOutputs[1]);
 	}
 
 	override function kill() {
