@@ -15,7 +15,7 @@ class Entity extends FlxSprite {
 	/**
 	 * Maximum velocity that this `Entity`'s physics body can reach.
 	 */
-	public static inline final MAX_VELOCITY = 500;
+	public static inline final MAX_VELOCITY = 200;
 
 	/**
 	 * Maximum rotational velocity that this `Entity`'s physics body can reach.
@@ -51,36 +51,36 @@ class Entity extends FlxSprite {
 		makeGraphic(_width, _height, _color);
 
 		canMove = true;
-		moveRange = new FlxRange<Float>(-50, 100);
-		rotationRange = new FlxRange<Float>(-15, 15);
+		moveRange = new FlxRange<Float>(-400, 400);
+		rotationRange = new FlxRange<Float>(-300, 300);
 
 		/// BODY
 		this.add_body({
-			mass: 1,
-			drag_length: 10,
-			rotational_drag: 20,
+			mass: 0.3,
+			drag_length: 400,
+			rotational_drag: 50,
 			max_velocity_length: Entity.MAX_VELOCITY,
 			max_rotational_velocity: Entity.MAX_ROTATIONAL_VELOCITY,
-		}).bodyType = 2; // info returned by environment sensors
+		}).bodyType = 2; // info used by environment sensors
 		body = this.get_body();
 	}
 
 	override function update(elapsed:Float) {
 		super.update(elapsed);
 
-		
-			if (FlxG.keys.pressed.W) {
-				body.push(80, 0, true); // wait for fix or find out why dev version crashes then swap sin/cos
-			}
+		/*
+		if (FlxG.keys.pressed.W) {
+			body.push(400, 0, true);
+		}
 
-			if (FlxG.keys.pressed.A) {
-				body.rotational_velocity = -70;
-			} else if (FlxG.keys.pressed.D) {
-				body.rotational_velocity = 70;
-			} else {
-				body.rotational_velocity = 0;
-			}
-		 
+		if (FlxG.keys.pressed.A) {
+			body.rotational_velocity += -20;
+		} else if (FlxG.keys.pressed.D) {
+			body.rotational_velocity += 20;
+		} else {
+			body.rotational_velocity = 0;
+		}
+		*/
 	}
 
 	/**
@@ -102,7 +102,7 @@ class Entity extends FlxSprite {
 	public function rotate(_rotationAmount:Float) {
 		var mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
 
-		body.rotational_velocity += mappedRotationAmt;
+		body.rotational_velocity = mappedRotationAmt;
 	}
 
 	/**
