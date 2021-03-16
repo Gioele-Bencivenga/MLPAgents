@@ -68,19 +68,19 @@ class Entity extends FlxSprite {
 	override function update(elapsed:Float) {
 		super.update(elapsed);
 
-		/*
+		
 			if (FlxG.keys.pressed.W) {
-				body.push(100, true); // wait for fix or find out why dev version crashes then swap sin/cos
+				body.push(80, 0, true); // wait for fix or find out why dev version crashes then swap sin/cos
 			}
 
 			if (FlxG.keys.pressed.A) {
-				body.rotational_velocity = -50;
+				body.rotational_velocity = -70;
 			} else if (FlxG.keys.pressed.D) {
-				body.rotational_velocity = 50;
+				body.rotational_velocity = 70;
 			} else {
 				body.rotational_velocity = 0;
 			}
-		 */
+		 
 	}
 
 	/**

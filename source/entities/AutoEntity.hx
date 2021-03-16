@@ -1,5 +1,9 @@
 package entities;
 
+import echo.data.Data.Intersection;
+import flixel.math.FlxMath;
+import flixel.FlxSprite;
+import flixel.FlxG;
 import brains.MLP;
 import hxmath.math.MathUtil;
 import flixel.util.helpers.FlxRange;
@@ -21,14 +25,14 @@ class AutoEntity extends Entity {
 	/**
 	 * Number of environment sensors that agents have.
 	 */
-	public static inline final SENSORS_COUNT = 6;
+	public static inline final SENSORS_COUNT:Int = 6;
 
 	/**
 	 * How often the sensors are cast.
 	 * 
 	 * The `sense()` function will be run by the `senserTimer` each `SENSORS_TICK` seconds.
 	 */
-	public static inline final SENSORS_TICK = 0.13;
+	public static inline final SENSORS_TICK:Float = 0.04;
 
 	/**
 	 * This entity's multilayer perceptron, getting inputs from the sensors and giving outputs as movement.
@@ -70,7 +74,12 @@ class AutoEntity extends Entity {
 	/**
 	 * The current inputs that are being fed to the `MLP`.
 	 * 
-	 * These values have already been mapped to a range between -1 and 1.
+	 * The array has 3 neurons for each sensors:
+	 * - `distanceToWall` `0` sensor sees no wall, `0.1` far away wall, `0.9` very close wall
+	 * - `distanceToEntity` `0` sensor sees no entity, `0.1` far away entity, `0.9` very close entity
+	 * - `distanceToResource` `0` sensor sees no resource, `0.1` far away resource, `0.9` very close resource
+	 * 
+	 * These values are mapped to a range between 0 and 1.
 	 */
 	var brainInputs:Array<Float>;
 
@@ -79,7 +88,8 @@ class AutoEntity extends Entity {
 
 		isCamTarget = false;
 
-		possibleRotations = new FlxRange(-65., 65.);
+		var rot = 65.;
+		possibleRotations = new FlxRange(-rot, rot);
 
 		sensorsRotations = [
 			for (i in 0...SENSORS_COUNT) {
@@ -128,14 +138,14 @@ class AutoEntity extends Entity {
 		senserTimer = new FlxTimer();
 		senserTimer.start(SENSORS_TICK, (_) -> sense(), 0);
 
-		brain = new MLP(6, 4, 2);
+		brain = new MLP(SENSORS_COUNT * 3, 4, 2); // 3 inputs each sensor
 
-		brainInputs = [for (i in 0...brain.inputLayer.length) 0];
+		brainInputs = [for (i in 0...brain.inputLayerSize) 0];
 	}
 
 	override function update(elapsed:Float) {
 		super.update(elapsed);
-		act();
+		// act();
 	}
 
 	/**
@@ -144,7 +154,7 @@ class AutoEntity extends Entity {
 	 * Called periodically by the `senserTimer`.
 	 */
 	function sense() {
-		var sensorInputs = [for (i in 0...brain.inputLayer.length) 0.];
+		var sensorInputs = [for (i in 0...brain.inputLayerSize) 0.];
 		// we need an array of bodies for the linecast
 		var bodiesArray:Array<Body> = PlayState.collidableBodies.get_group_bodies();
 
@@ -154,43 +164,54 @@ class AutoEntity extends Entity {
 		for (i in 0...sensors.length) { // do this for each sensor
 			sensors[i] = Line.get(); // init the sensor
 			// create a vector to subtract from the body's position in order to to gain a relative offset
-			var relOffset = Vector2.fromPolar(MathUtil.degToRad(this.get_body().rotation + sensorsRotations[i]),
-				(this.get_body().shape.bounds().height / 2) + 10); // radius is distance from body
-			var sensorPos = this.get_body()
-				.get_position()
+			var relOffset = Vector2.fromPolar(MathUtil.degToRad(body.rotation + sensorsRotations[i]), 20); // radius is distance from body
+
+			var sensorPos = body.get_position()
 				.addWith(relOffset); // this body's pos added with the offset will give us a sensor starting position out of the body
+
 			// set the actual sensors position
-			sensors[i].set_from_vector(sensorPos, this.get_body().rotation + sensorsRotations[i], sensorsLengths[i]);
+			sensors[i].set_from_vector(sensorPos, body.rotation + sensorsRotations[i], sensorsLengths[i]);
 			// cast the line, returning all intersections
 			var hit = sensors[i].linecast(bodiesArray);
 			if (hit != null) { // if we hit something
 				sensorInputs[i] = hit.body.bodyType; // put it in the array
 				var lineColor = FlxColor.RED;
 				switch (hit.body.bodyType) {
-					case 1: // hit a Tile (wall)
+					case 1: // hit a wall
 						lineColor = FlxColor.YELLOW;
-					case 2: // hit an Entity
+						sensorInputs[i] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToWall neuron
+					case 2: // hit an agent
 						lineColor = FlxColor.MAGENTA;
-					case 3: // hit a Supply
+						sensorInputs[i + 1] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToEntity neuron
+					case 3: // hit a resource
 						lineColor = FlxColor.CYAN;
-					default: // hit unknown
+						sensorInputs[i + 2] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToResource neuron
+						trace('hit distance ${hit.closest.distance}\nmapped ${sensorInputs[i + 2]}');
+					case unknown: // hit unknown
 						lineColor = FlxColor.BROWN;
+						sensorInputs[i] = 0;
+						sensorInputs[i + 1] = 0;
+						sensorInputs[i + 2] = 0;
 				}
 				if (isCamTarget)
 					DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y, lineColor, 1.5);
 			} else { // if we didn't hit anything
-				sensorInputs[i] = 0; // reflect it in the array
+				// reflect it in the array
+				sensorInputs[i] = 0;
+				sensorInputs[i + 1] = 0;
+				sensorInputs[i + 2] = 0;
+
 				if (isCamTarget)
 					DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y);
 			}
-			sensors[i].put();
+			sensors[i].put(); // put the linecast
 		}
 		// put mapped inputs into array
 		// we only update the sensors each sense(),
 		// but the MLP keeps processing inputs
 		brainInputs = [
 			for (input in sensorInputs)
-				HxFuncs.map(input, 0, 3, -1, 1)
+				HxFuncs.map(input, 0, 3, 0, 1)
 		];
 	}
 
@@ -202,6 +223,10 @@ class AutoEntity extends Entity {
 		rotate(brainOutputs[1]);
 	}
 
+	function invDistanceTo(_inters:Intersection, _maxDistance:Float):Float {
+		return HxFuncs.map(_inters.closest.distance, 0, _maxDistance, 1, 0);
+	}
+
 	override function kill() {
 		super.kill();
 		if (senserTimer.active) {
@@ -210,3 +235,11 @@ class AutoEntity extends Entity {
 		}
 	}
 }
+
+// input neurons need to be `distanceToWall:Float`, `distanceToEntity:Float`, `distanceToSupply:Float`
+// and need to be 0 == no wall/entity/supply hit by that sensor
+// 0.1 == wall/entity/supply hit and very far
+// 0.9 == wall/entity/supply hit and very close
+// add bias to input
+// make them eat, attack, lose energy etc
+// measure of fitness (lifetime/energy)

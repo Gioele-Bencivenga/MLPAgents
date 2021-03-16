@@ -8,9 +8,11 @@ import flixel.FlxG;
  */
 class MLP {
 	/**
-	 * The perceptron's input layer.
+	 * How many input neurons this network has.
+	 * 
+	 * This is set when the network is first created.
 	 */
-	public var inputLayer(default, null):Array<Float>;
+	public var inputLayerSize(default, null):Int;
 
 	/**
 	 * The perceptron's hidden layer.
@@ -56,8 +58,8 @@ class MLP {
 	 * @param _outputLayerSize the number of neurons that the `outputLayer` will have
 	 */
 	public function new(_inputLayerSize:Int, _hiddenLayerSize:Int, _outputLayerSize:Int) {
+		inputLayerSize = _inputLayerSize;
 		// initialise layers of neurons
-		inputLayer = [for (i in 0..._inputLayerSize) 0]; // not needed anymore?
 		hiddenLayer = [for (i in 0..._hiddenLayerSize) FlxG.random.float(-1, 1)];
 		outputLayer = [for (i in 0..._outputLayerSize) FlxG.random.float(-1, 1)];
 		// initialise lists of outputs with 0s
@@ -65,7 +67,7 @@ class MLP {
 		outputOutputs = [for (i in 0..._outputLayerSize) 0];
 
 		// calculate number of connection weights between neurons and initialise them with random values
-		weightsCount = (inputLayer.length * hiddenLayer.length) + (hiddenLayer.length * outputLayer.length);
+		weightsCount = (_inputLayerSize * hiddenLayer.length) + (hiddenLayer.length * outputLayer.length);
 		weights = [for (i in 0...weightsCount) FlxG.random.float(-1, 1)];
 	}
 
@@ -73,6 +75,7 @@ class MLP {
 	 * Feed the input forward through the network.
 	 * 
 	 * Optimize with matrix multiplication in the future if needed.
+	 * Remeber to add bias (last input neuron always on 1) for when all inputs are 0es.
 	 * 
 	 * @param _inputLayer the raw input data that the network will process, values must be between -1 and 1
 	 * @return the array of outputs produced by the network, each output ranging from -1 to 1 inclusive
