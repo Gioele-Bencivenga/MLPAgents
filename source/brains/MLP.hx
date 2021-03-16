@@ -77,10 +77,13 @@ class MLP {
 	 * Optimize with matrix multiplication in the future if needed.
 	 * Remeber to add bias (last input neuron always on 1) for when all inputs are 0es.
 	 * 
-	 * @param _inputLayer the raw input data that the network will process, values must be between -1 and 1
+	 * @param _inputLayer the input data that the network will process, values must be between 0 and 1
 	 * @return the array of outputs produced by the network, each output ranging from -1 to 1 inclusive
 	 */
 	public function feedForward(_inputLayer:Array<Float>):Array<Float> {
+		// convert inputLayer range from 0...1 to -1...1
+		_inputLayer = [for (input in _inputLayer) HxFuncs.map(input, 0, 1, -1, 1)];
+
 		var wc:Int = 0; // weights counter
 
 		for (i in 0...hiddenLayer.length) {
