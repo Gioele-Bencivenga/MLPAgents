@@ -27,7 +27,7 @@ class Supply extends FlxSprite {
 		makeGraphic(Std.int(health * 3), Std.int(health * 3), _color);
 
 		this.add_body({
-			mass: 0.5,
+			mass: 0.1,
 			drag_length: 500,
 			rotational_drag: 150
 		}).bodyType = 3;
@@ -35,19 +35,15 @@ class Supply extends FlxSprite {
 
 	/**
 	 * Depletes the supply's `health` by an amount, flips `canBeHurt` to `false` until the damage feedback ends.
+	 * 
 	 * @param _damage the amount we want to deplete the supply by
 	 */
 	override function hurt(_damage:Float) {
-		canBeHurt = false;
-		super.hurt(_damage);
-		updateSize();
-	}
-
-	/**
-	 * Manages the object's reaction to the damage.
-	 */
-	function damageFeedback() {
-		updateSize();
+		if (canBeHurt) {
+			canBeHurt = false;
+			super.hurt(_damage);
+			updateSize();
+		}
 	}
 
 	override function update(elapsed:Float) {
@@ -55,14 +51,16 @@ class Supply extends FlxSprite {
 	}
 
 	/**
-	 * Sets the `width` and `height` of the object according to its current `health`. Flips `canBeHurt` back to `true` when done.
+	 * Sets the `width` and `height` of the object according to its current `health`. 
+	 * 
+	 * Flips `canBeHurt` back to `true` when done.
 	 */
 	function updateSize() {
 		var body = this.get_body();
 		FlxTween.tween(body, {
 			width: health * 3,
 			height: health * 3
-		}, 0.3, {
+		}, 0.2, {
 			ease: FlxEase.sineIn,
 			onComplete: function(_) {
 				canBeHurt = true;
