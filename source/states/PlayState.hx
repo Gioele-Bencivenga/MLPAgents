@@ -43,12 +43,12 @@ class PlayState extends FlxState {
 	/**
 	 * Minimum zoom level reachable by the `simCam`.
 	 */
-	public static inline final CAM_MIN_ZOOM:Float = 0.3;
+	public static inline final CAM_MIN_ZOOM:Float = 0.25;
 
 	/**
 	 * Maximum zoom level reachable by the `simCam`.
 	 */
-	public static inline final CAM_MAX_ZOOM:Float = 1.5;
+	public static inline final CAM_MAX_ZOOM:Float = 1.6;
 
 	/**
 	 * Canvas is needed in order to `drawLine()` with `DebugLine`.
@@ -170,12 +170,12 @@ class PlayState extends FlxState {
 		uiView.scrollFactor.set(0, 0); // and they won't scroll
 		add(uiView);
 		// wire functions to UI buttons
-		uiView.findComponent("btn_gen_cave", MenuItem).onClick = btn_generateCave_onClick;
-		uiView.findComponent("btn_clear_world", MenuItem).onClick = btn_clearWorld_onClick;
-		uiView.findComponent("link_website", MenuItem).onClick = link_website_onClick;
-		uiView.findComponent("link_github", MenuItem).onClick = link_github_onClick;
+		uiView.findComponent("mn_gen_cave", MenuItem).onClick = btn_generateCave_onClick;
+		uiView.findComponent("mn_clear_world", MenuItem).onClick = btn_clearWorld_onClick;
+		uiView.findComponent("mn_link_website", MenuItem).onClick = link_website_onClick;
+		uiView.findComponent("mn_link_github", MenuItem).onClick = link_github_onClick;
 		uiView.findComponent("btn_play_pause", Button).onClick = btn_play_pause_onClick;
-		uiView.findComponent("btn_zoom", Button).onClick = btn_zoom_onClick;
+		uiView.findComponent("btn_target", Button).onClick = btn_target_onClick;
 		uiView.findComponent("sld_zoom", Slider).onChange = sld_zoom_onChange;
 		uiView.findComponent("lbl_version", Label).text = haxe.macro.Compiler.getDefine("PROJECT_VERSION");
 	}
@@ -196,7 +196,7 @@ class PlayState extends FlxState {
 	}
 
 	function link_github_onClick(_) {
-		FlxG.openURL("https://github.com/Gioele-Bencivenga/TilemapGen", "_blank");
+		FlxG.openURL("https://github.com/Gioele-Bencivenga/MLPAgents", "_blank");
 	}
 
 	function btn_play_pause_onClick(_) {
@@ -213,18 +213,13 @@ class PlayState extends FlxState {
 		}
 	}
 
-	function btn_zoom_onClick(_) {
-		var slider = uiView.findComponent("sld_zoom", Slider);
-
-		if (slider.pos > 50)
-			slider.pos = 30;
-		else if (slider.pos <= 50) {
-			slider.pos = 70;
-		}
+	function btn_target_onClick(_) {
+		setCameraTargetAgent(agents.getRandom());
 	}
 
 	function sld_zoom_onChange(_) {
 		var slider = uiView.findComponent("sld_zoom", Slider);
+
 		simCam.targetZoom = HxFuncs.map(slider.pos, slider.min, slider.max, CAM_MIN_ZOOM, CAM_MAX_ZOOM);
 	}
 
@@ -241,7 +236,7 @@ class PlayState extends FlxState {
 	function generateCaveTilemap() {
 		// instantiate generator and generate the level
 		var gen = new Generator(70, 110);
-		var levelData:Array<Array<Int>> = gen.generateCave(1);
+		var levelData:Array<Array<Int>> = gen.generateCave(3);
 
 		// reset the groups before filling them again
 		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], [agents]);

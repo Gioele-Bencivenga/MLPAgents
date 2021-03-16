@@ -22,16 +22,16 @@
 	<menubar width="100%">
 		<menu text="World">
 			<menu text="Generate New" tooltip="Generate a new world from the options">
-				<menuitem id="btn_gen_cave" text="Cave" tooltip="Generate an enclosed and random cave system" />
-				<menuitem id="btn_gen_island" text="Inverted" tooltip="Generate the inverse of the cave system: solid and empty blocks are switched" />
-				<menuitem id="btn_gen_random" text="Random" tooltip="Generate the random distribution of blocks from which the cellular automaton creates the cave" />
+				<menuitem id="mn_gen_cave" text="Cave" tooltip="Generate an enclosed and random cave system" />
+				<menuitem id="mn_gen_island" text="Inverted" tooltip="Generate the inverse of the cave system: solid and empty blocks are switched" />
+				<menuitem id="mn_gen_random" text="Random" tooltip="Generate the random distribution of blocks from which the cellular automaton creates the cave" />
 			</menu>
-			<menuitem id="btn_clear_world" text="Clear World" />
+			<menuitem id="mn_clear_world" text="Clear World" />
 			<menuseparator />
 		</menu>
 		<menu text="About">
-			<menuitem id="link_website" text="My Website" icon="assets/icons/icon_website.png" />
-			<menuitem id="link_github" text="Code on GitHub" icon="assets/icons/icon_github.png" />
+			<menuitem id="mn_link_website" text="My Website" icon="assets/icons/icon_website.png" />
+			<menuitem id="mn_link_github" text="Code on GitHub" icon="assets/icons/icon_github.png" />
 		</menu>
 	</menubar>
 
@@ -42,7 +42,7 @@
 		</box>
 		<vbox width="100%">
 			<vbox horizontalAlign="right">
-				<button id="btn_zoom" text="zoom" horizontalAlign="center" />
+				<button id="btn_target" text="target" horizontalAlign="center" />
 				<slider id="sld_zoom" pos="50" horizontalAlign="center" tooltip="Set the zoom level by sliding the slider" />
 			</vbox>
 		</vbox>
