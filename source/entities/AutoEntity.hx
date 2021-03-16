@@ -32,7 +32,12 @@ class AutoEntity extends Entity {
 	 * 
 	 * The `sense()` function will be run by the `senserTimer` each `SENSORS_TICK` seconds.
 	 */
-	public static inline final SENSORS_TICK:Float = 0.04;
+	public static inline final SENSORS_TICK:Float = 0.1;
+
+	/**
+	 * The sensors' distance from the center of this entity's body.
+	 */
+	public static inline final SENSORS_DISTANCE:Float = 19;
 
 	/**
 	 * This entity's multilayer perceptron, getting inputs from the sensors and giving outputs as movement.
@@ -88,7 +93,7 @@ class AutoEntity extends Entity {
 
 		isCamTarget = false;
 
-		var rot = 65.;
+		var rot = FlxG.random.float(20, 130);
 		possibleRotations = new FlxRange(-rot, rot);
 
 		sensorsRotations = [
@@ -145,7 +150,7 @@ class AutoEntity extends Entity {
 
 	override function update(elapsed:Float) {
 		super.update(elapsed);
-		// act();
+		act();
 	}
 
 	/**
@@ -164,12 +169,12 @@ class AutoEntity extends Entity {
 		for (i in 0...sensors.length) { // do this for each sensor
 			sensors[i] = Line.get(); // init the sensor
 			// create a vector to subtract from the body's position in order to to gain a relative offset
-			var relOffset = Vector2.fromPolar(MathUtil.degToRad(body.rotation + sensorsRotations[i]), 20); // radius is distance from body
+			var relOffset = Vector2.fromPolar(MathUtil.degToRad(body.rotation + sensorsRotations[i]), SENSORS_DISTANCE); // radius is distance from body
 
 			var sensorPos = body.get_position()
 				.addWith(relOffset); // this body's pos added with the offset will give us a sensor starting position out of the body
 
-			// set the actual sensors position
+			// set the actual sensors position,rotation, and length
 			sensors[i].set_from_vector(sensorPos, body.rotation + sensorsRotations[i], sensorsLengths[i]);
 			// cast the line, returning all intersections
 			var hit = sensors[i].linecast(bodiesArray);
@@ -186,7 +191,6 @@ class AutoEntity extends Entity {
 					case 3: // hit a resource
 						lineColor = FlxColor.CYAN;
 						sensorInputs[i + 2] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToResource neuron
-						trace('hit distance ${hit.closest.distance}\nmapped ${sensorInputs[i + 2]}');
 					case unknown: // hit unknown
 						lineColor = FlxColor.BROWN;
 						sensorInputs[i] = 0;
@@ -194,7 +198,7 @@ class AutoEntity extends Entity {
 						sensorInputs[i + 2] = 0;
 				}
 				if (isCamTarget)
-					DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y, lineColor, 1.5);
+					DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y, lineColor, 2);
 			} else { // if we didn't hit anything
 				// reflect it in the array
 				sensorInputs[i] = 0;
@@ -223,8 +227,51 @@ class AutoEntity extends Entity {
 		rotate(brainOutputs[1]);
 	}
 
+	/**
+	 * Returns the distance to the intersection in a range of `1` to `0`. 
+	 * 
+	 * Meaning that if the intersection happens furthest from the sensor a value close to `0` will be returned, 
+	 * while a close intersection will return a value close to `1`.
+	 * 
+	 * This is because the agents should prefer and prioritise closer stuff.
+	 * 
+	 * @param _inters the intersection that we want to measure the distance of
+	 * @param _maxDistance the maximum distance at which an intersection can happen (sensor's length)
+	 * @return the intersection's distance as represented by a value in a range of `1` to `0`
+	 */
 	function invDistanceTo(_inters:Intersection, _maxDistance:Float):Float {
 		return HxFuncs.map(_inters.closest.distance, 0, _maxDistance, 1, 0);
+	}
+
+	/**
+	 * Sets the limits for the sensors rotation positioning.
+	 *
+	 * @param _newStart 
+	 * @param _newEnd 
+	 */
+	function setSensorRotations(_newStart:Float, _newEnd:Float) {
+		possibleRotations.set(_newStart, _newEnd);
+
+		sensorsRotations = [
+			for (i in 0...SENSORS_COUNT) {
+				switch (i) {
+					case 0:
+						possibleRotations.start;
+					case 1:
+						possibleRotations.start + (possibleRotations.end / 2);
+					case 2:
+						possibleRotations.start + (possibleRotations.end - (possibleRotations.end / 10));
+					case 3:
+						possibleRotations.end + (possibleRotations.start + (possibleRotations.end / 10));
+					case 4:
+						possibleRotations.end + (possibleRotations.start / 2);
+					case 5:
+						possibleRotations.end;
+					default:
+						0;
+				}
+			}
+		];
 	}
 
 	override function kill() {
@@ -236,10 +283,6 @@ class AutoEntity extends Entity {
 	}
 }
 
-// input neurons need to be `distanceToWall:Float`, `distanceToEntity:Float`, `distanceToSupply:Float`
-// and need to be 0 == no wall/entity/supply hit by that sensor
-// 0.1 == wall/entity/supply hit and very far
-// 0.9 == wall/entity/supply hit and very close
 // add bias to input
 // make them eat, attack, lose energy etc
 // measure of fitness (lifetime/energy)
