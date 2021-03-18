@@ -1,5 +1,6 @@
 package states;
 
+import openfl.display.StageQuality;
 import flixel.FlxObject;
 import haxe.ui.themes.Theme;
 import utilities.HxFuncs;
@@ -109,6 +110,8 @@ class PlayState extends FlxState {
 	}
 
 	override function create() {
+		FlxG.game.stage.quality = StageQuality.LOW;
+
 		setupCameras();
 
 		setupUI();
@@ -236,7 +239,7 @@ class PlayState extends FlxState {
 	function generateCaveTilemap() {
 		// instantiate generator and generate the level
 		var gen = new Generator(70, 110);
-		var levelData:Array<Array<Int>> = gen.generateCave(3);
+		var levelData:Array<Array<Int>> = gen.generateCave(7);
 
 		// reset the groups before filling them again
 		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], [agents]);

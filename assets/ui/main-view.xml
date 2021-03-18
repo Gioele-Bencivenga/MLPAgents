@@ -42,7 +42,7 @@
 		</box>
 		<vbox width="100%">
 			<vbox horizontalAlign="right">
-				<button id="btn_target" text="target" horizontalAlign="center" />
+				<button id="btn_target" text="target" horizontalAlign="center" tooltip="Start tracking a new random target"/>
 				<slider id="sld_zoom" pos="50" horizontalAlign="center" tooltip="Set the zoom level by sliding the slider" />
 			</vbox>
 		</vbox>

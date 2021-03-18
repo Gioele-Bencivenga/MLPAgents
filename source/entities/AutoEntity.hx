@@ -28,6 +28,16 @@ class AutoEntity extends Entity {
 	public static inline final SENSORS_COUNT:Int = 6;
 
 	/**
+	 * Each sensor activates 3 input neurons: 
+	 * - distanceToWall `0..1`
+	 * - distanceToEntity `0..1`
+	 * - distanceToResource `0..1`
+	 * 
+	 * Shorter distance = higher activation and vice versa.
+	 */
+	public static inline final SENSORS_INPUTS:Int = SENSORS_COUNT * 3;
+
+	/**
 	 * How often the sensors are cast.
 	 * 
 	 * The `sense()` function will be run by the `senserTimer` each `SENSORS_TICK` seconds.
@@ -38,6 +48,11 @@ class AutoEntity extends Entity {
 	 * The sensors' distance from the center of this entity's body.
 	 */
 	public static inline final SENSORS_DISTANCE:Float = 19;
+	
+	/**
+	 * Bias is added via a neuron that's always firing 1.
+	 */
+	public static inline final BIAS:Int = 1;
 
 	/**
 	 * This entity's multilayer perceptron, getting inputs from the sensors and giving outputs as movement.
@@ -143,7 +158,10 @@ class AutoEntity extends Entity {
 		senserTimer = new FlxTimer();
 		senserTimer.start(SENSORS_TICK, (_) -> sense(), 0);
 
-		brain = new MLP(SENSORS_COUNT * 3, 4, 2); // 3 inputs each sensor
+		brain = new MLP(SENSORS_INPUTS // number of input neurons dedicated to sensors
+			+ 1 // bias neuron that's always firing 1
+			, 4 // hidden layer
+			, 2); // output layer, for now thrust and rotation
 
 		brainInputs = [for (i in 0...brain.inputLayerSize) 0];
 	}
@@ -159,7 +177,7 @@ class AutoEntity extends Entity {
 	 * Called periodically by the `senserTimer`.
 	 */
 	function sense() {
-		var sensorInputs = [for (i in 0...brain.inputLayerSize) 0.];
+		var sensorInputs = [for (i in 0...SENSORS_INPUTS) 0.];
 		// we need an array of bodies for the linecast
 		var bodiesArray:Array<Body> = PlayState.collidableBodies.get_group_bodies();
 
@@ -211,12 +229,12 @@ class AutoEntity extends Entity {
 			sensors[i].put(); // put the linecast
 		}
 		// put mapped inputs into array
-		// we only update the sensors each sense(),
-		// but the MLP keeps processing inputs
 		brainInputs = [
 			for (input in sensorInputs)
 				HxFuncs.map(input, 0, 3, 0, 1)
 		];
+
+		brainInputs = brainInputs.concat([1]); // probably keeps concatenating endlessly
 	}
 
 	function act() {

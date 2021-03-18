@@ -42,15 +42,20 @@
 
 	<haxelib name="flixel" />
 
-	<!-- In case you want to use the addons package -->
+	<!-- Addons package -->
 	<haxelib name="flixel-addons" />
 
-	<!-- Echo Physics by Austin East -->
+	<!-- In-game editor by Fernando Bevilacqua https://github.com/Dovyski/flixel-studio 
+		only works when run with the -debug flag `lime test html5 -debug` -->
+	<!-- <haxelib name="flixel-studio" /> -->
+
+	<!-- Echo Physics by Austin East https://github.com/AustinEast/echo-flixel -->
 	<haxelib name="echo-flixel" />
 	<!-- Adds a `bodyType:Int` field to echo's `Body` class -->
 	<haxeflag name="--macro" value="echo.Macros.add_data('bodyType', 'Int')" />
 
-	<!-- HaxeUI by IanArrigan-->
+	<!-- HaxeUI by IanArrigan https://github.com/haxeui/haxeui-core -
+							https://github.com/haxeui/haxeui-flixel -->
 	<haxelib name="haxeui-core" />
 	<haxelib name="haxeui-flixel" />
 
