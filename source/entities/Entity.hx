@@ -1,12 +1,11 @@
 package entities;
 
+import flixel.tweens.FlxTween;
+import flixel.util.FlxColor;
 import utilities.HxFuncs;
 import flixel.util.helpers.FlxRange;
 import flixel.FlxG;
 import echo.Body;
-import hxmath.math.MathUtil;
-import flixel.math.FlxVector;
-import hxmath.math.Vector2;
 import flixel.FlxSprite;
 
 using echo.FlxEcho;
@@ -21,6 +20,11 @@ class Entity extends FlxSprite {
 	 * Maximum rotational velocity that this `Entity`'s physics body can reach.
 	 */
 	public static inline final MAX_ROTATIONAL_VELOCITY = 500;
+
+	/**
+	 * The color of this sprite from the colorwheel.
+	 */
+	var colorHue:Float;
 
 	/**
 	 * Reference to this entity's physics body.
@@ -46,9 +50,24 @@ class Entity extends FlxSprite {
 	 */
 	var rotationRange:FlxRange<Float>;
 
-	public function new(_x:Float, _y:Float, _width:Int, _height:Int, _color:Int) {
+	/**
+	 * Maximum amount of `energy` this entity has.
+	 */
+	public var maxEnergy(default, null):Float;
+
+	/**
+	 * Current amount of `energy` this entity has.
+	 * 
+	 * `energy` is used to move, attack, eat...
+	 * 
+	 * and is replenished by eating and resting.
+	 */
+	public var currEnergy(default, null):Float;
+
+	public function new(_x:Float, _y:Float, _width:Int, _height:Int) {
 		super(_x, _y);
-		makeGraphic(_width, _height, _color);
+		makeGraphic(_width, _height, FlxColor.WHITE);
+		colorHue = 45;
 
 		canMove = true;
 		moveRange = new FlxRange<Float>(-400, 400);
@@ -63,35 +82,44 @@ class Entity extends FlxSprite {
 			max_rotational_velocity: Entity.MAX_ROTATIONAL_VELOCITY,
 		}).bodyType = 2; // info used by environment sensors
 		body = this.get_body();
+
+		maxEnergy = FlxG.random.float(500, 1000);
+		currEnergy = maxEnergy;
 	}
 
 	override function update(elapsed:Float) {
 		super.update(elapsed);
 
-		
 		if (FlxG.keys.pressed.W) {
-			body.push(400, 0, true);
+			move(0.8);
+		} else if (FlxG.keys.pressed.S) {
+			move(-0.8);
 		}
 
+		if (FlxG.keys.pressed.F) {}
+
 		if (FlxG.keys.pressed.A) {
-			body.rotational_velocity += -20;
+			rotate(-0.8);
 		} else if (FlxG.keys.pressed.D) {
-			body.rotational_velocity += 20;
+			rotate(0.8);
 		} else {
-			body.rotational_velocity = 0;
+			rotate(0);
 		}
-		
 	}
 
 	/**
-	 * Pushes a `body` forward/backward along its axis based on the mapped value of `_moveAmount`.
+	 * Pushes the entity forward/backward along its axis based on the mapped value of `_moveAmount`, if it has enough energy.
 	 * 
-	 * @param _moveAmount how much to move forward or backwards (-1 to 1)
+	 * Also depletes the entity's energy by `_moveAmount`.
+	 * 
+	 * @param _moveAmount how much to move forward or backwards (-1 to 1), and how much energy will be depleted
 	 */
 	public function move(_moveAmount:Float) {
-		var mappedMoveAmt = HxFuncs.map(_moveAmount, -1, 1, moveRange.start, moveRange.end);
+		if (depleteEnergy(_moveAmount)) { // if the energy is successfully expended
+			var mappedMoveAmt = HxFuncs.map(_moveAmount, -1, 1, moveRange.start, moveRange.end);
 
-		body.push(mappedMoveAmt, true);
+			body.push(mappedMoveAmt, true);
+		}
 	}
 
 	/**
@@ -100,9 +128,61 @@ class Entity extends FlxSprite {
 	 * @param _rotationAmount how much to rotate left or right (-1 to 1)
 	 */
 	public function rotate(_rotationAmount:Float) {
-		var mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
+		if (depleteEnergy(_rotationAmount / 2)) { // less energy is require to rotate
+			var mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
 
-		body.rotational_velocity = mappedRotationAmt;
+			body.rotational_velocity = mappedRotationAmt;
+		}
+	}
+
+	/**
+	 * Replenishes the entity's `currEnergy` by an absolute amount.
+	 * 
+	 * @param _energyAmount the amount of energy we want to add to `currEnergy`
+	 * @return `true` if the current energy amount reached `maxEnergy`, `false` if we just increased it
+	 */
+	public function replenishEnergy(_energyAmount:Float):Bool {
+		_energyAmount = Math.abs(_energyAmount);
+
+		if (currEnergy <= maxEnergy - _energyAmount) { // if the amount doesn't exceed our max
+			currEnergy += _energyAmount; // increase by the amount
+
+			refreshColor();
+			return false;
+		} else { // if the amount would exceed
+			currEnergy = maxEnergy; // just reach the max
+
+			refreshColor();
+			return true;
+		}
+	}
+
+	/**
+	 * Depletes the entity's `currEnergy` by an absolute amount.
+	 * 
+	 * @param _energyAmount the amount of energy we want to subtract from `currEnergy`
+	 * @return `true` if the depletion was successful, `false` if there wasn't enough energy to deplete
+	 */
+	function depleteEnergy(_energyAmount:Float):Bool {
+		_energyAmount = Math.abs(_energyAmount);
+
+		if (currEnergy >= _energyAmount) { // if we have enough energy to deplete
+			currEnergy -= _energyAmount; // deplete by the amount
+
+			refreshColor();
+
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	function refreshColor() {
+		var sat = HxFuncs.map(currEnergy, 0, maxEnergy, 0, 1);
+		var bri = HxFuncs.map(currEnergy, 0, maxEnergy, 0.65, 1);
+		var newCol = new FlxColor();
+		newCol.setHSB(colorHue, sat, bri, 1);
+		color = newCol;
 	}
 
 	/**

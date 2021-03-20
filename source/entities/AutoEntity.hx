@@ -1,5 +1,6 @@
 package entities;
 
+import supplies.Supply;
 import echo.data.Data.Intersection;
 import flixel.math.FlxMath;
 import flixel.FlxSprite;
@@ -28,14 +29,16 @@ class AutoEntity extends Entity {
 	public static inline final SENSORS_COUNT:Int = 6;
 
 	/**
-	 * Each sensor activates 3 input neurons: 
-	 * - distanceToWall `0..1`
-	 * - distanceToEntity `0..1`
-	 * - distanceToResource `0..1`
+	 * Each sensor activates 5 input neurons: 
+	 * - distanceToWall `0..1` distance to wall hit by sensor
+	 * - distanceToEntity `0..1` distance to entity hit by sensor
+	 * - distanceToResource `0..1` distance to resource hit by sensor
+	 * - entityEnergy `0..1` the amount of energy of the hit entity (if any)
+	 * - supplyAmount `0..1` the amount of the hit resource (if any)
 	 * 
 	 * Shorter distance = higher activation and vice versa.
 	 */
-	public static inline final SENSORS_INPUTS:Int = SENSORS_COUNT * 3;
+	public static inline final SENSORS_INPUTS:Int = SENSORS_COUNT * 5;
 
 	/**
 	 * How often the sensors are cast.
@@ -48,7 +51,7 @@ class AutoEntity extends Entity {
 	 * The sensors' distance from the center of this entity's body.
 	 */
 	public static inline final SENSORS_DISTANCE:Float = 19;
-	
+
 	/**
 	 * Bias is added via a neuron that's always firing 1.
 	 */
@@ -94,17 +97,19 @@ class AutoEntity extends Entity {
 	/**
 	 * The current inputs that are being fed to the `MLP`.
 	 * 
-	 * The array has 3 neurons for each sensors:
+	 * The array has 5 neurons for each sensors:
 	 * - `distanceToWall` `0` sensor sees no wall, `0.1` far away wall, `0.9` very close wall
 	 * - `distanceToEntity` `0` sensor sees no entity, `0.1` far away entity, `0.9` very close entity
 	 * - `distanceToResource` `0` sensor sees no resource, `0.1` far away resource, `0.9` very close resource
+	 * - `entityEnergy` `0` no entity sensed, `0.1` sensed low energy entity, `0.9` sensed high energy entity
+	 * - `supplyAmount` `0` no supply sensed, `0.1` sensed low quantity supply, `0.9` sensed high quantity supply 
 	 * 
 	 * These values are mapped to a range between 0 and 1.
 	 */
 	var brainInputs:Array<Float>;
 
-	public function new(_x:Float, _y:Float, _width:Int, _height:Int, _color:Int) {
-		super(_x, _y, _width, _height, _color);
+	public function new(_x:Float, _y:Float, _width:Int, _height:Int) {
+		super(_x, _y, _width, _height);
 
 		isCamTarget = false;
 
@@ -159,6 +164,7 @@ class AutoEntity extends Entity {
 		senserTimer.start(SENSORS_TICK, (_) -> sense(), 0);
 
 		brain = new MLP(SENSORS_INPUTS // number of input neurons dedicated to sensors
+			+ 1 // own energy level neuron
 			+ 1 // bias neuron that's always firing 1
 			, 4 // hidden layer
 			, 2); // output layer, for now thrust and rotation
@@ -168,7 +174,8 @@ class AutoEntity extends Entity {
 
 	override function update(elapsed:Float) {
 		super.update(elapsed);
-		act();
+
+		// act();
 	}
 
 	/**
@@ -206,14 +213,20 @@ class AutoEntity extends Entity {
 					case 2: // hit an agent
 						lineColor = FlxColor.MAGENTA;
 						sensorInputs[i + 1] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToEntity neuron
+						var agent = cast(hit.body.get_object(), AutoEntity);
+						sensorInputs[i + 3] = HxFuncs.map(agent.currEnergy, 0, agent.maxEnergy, 0, 1); // put agent's energy amount in entityEnergy neuron
 					case 3: // hit a resource
 						lineColor = FlxColor.CYAN;
 						sensorInputs[i + 2] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToResource neuron
+						var supp = cast(hit.body.get_object(), Supply);
+						sensorInputs[i + 4] = HxFuncs.map(supp.currAmount, 0, Supply.MAX_START_AMOUNT, 0, 1); // put supply's amount in supplyAmount neuron
 					case unknown: // hit unknown
 						lineColor = FlxColor.BROWN;
 						sensorInputs[i] = 0;
 						sensorInputs[i + 1] = 0;
 						sensorInputs[i + 2] = 0;
+						sensorInputs[i + 3] = 0;
+						sensorInputs[i + 4] = 0;
 				}
 				if (isCamTarget)
 					DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y, lineColor, 2);
@@ -222,19 +235,25 @@ class AutoEntity extends Entity {
 				sensorInputs[i] = 0;
 				sensorInputs[i + 1] = 0;
 				sensorInputs[i + 2] = 0;
+				sensorInputs[i + 3] = 0;
+				sensorInputs[i + 4] = 0;
 
 				if (isCamTarget)
 					DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y);
 			}
 			sensors[i].put(); // put the linecast
 		}
-		// put mapped inputs into array
+		// put mapped sensor inputs into array of inputs
 		brainInputs = [
 			for (input in sensorInputs)
 				HxFuncs.map(input, 0, 3, 0, 1)
 		];
 
-		brainInputs = brainInputs.concat([1]); // probably keeps concatenating endlessly
+		// add input neuron for current energy level
+		brainInputs = brainInputs.concat([HxFuncs.map(currEnergy, 0, maxEnergy, 0, 1)]);
+
+		// add bias neuron at the end
+		brainInputs = brainInputs.concat([1]);
 	}
 
 	function act() {
@@ -301,6 +320,5 @@ class AutoEntity extends Entity {
 	}
 }
 
-// add bias to input
 // make them eat, attack, lose energy etc
 // measure of fitness (lifetime/energy)

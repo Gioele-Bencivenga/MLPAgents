@@ -239,7 +239,7 @@ class PlayState extends FlxState {
 	function generateCaveTilemap() {
 		// instantiate generator and generate the level
 		var gen = new Generator(70, 110);
-		var levelData:Array<Array<Int>> = gen.generateCave(7);
+		var levelData:Array<Array<Int>> = gen.generateCave(1);
 
 		// reset the groups before filling them again
 		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], [agents]);
@@ -261,7 +261,7 @@ class PlayState extends FlxState {
 			var bounds = tile.bounds(); // Get the bounds of the generated physics body to create a Box sprite from it
 			var wallTile = new Tile(bounds.min_x, bounds.min_y, bounds.width.floor(), bounds.height.floor(), FlxColor.fromRGB(230, 240, 245));
 			bounds.put(); // put() the bounds so that they can be reused later. this can really help with memory management
-			// wallTile.set_body(tile); // SHOULD attach the generated body to the FlxObject, doesn't see to work at the moment so using add_body instead
+			// wallTile.set_body(tile); // SHOULD attach the generated body to the FlxObject, doesn't seem to work at the moment so using add_body instead
 			wallTile.add_body().bodyType = 1; // sensors understand 1 = wall, 2 = entity, 3 = resource...
 			wallTile.get_body().mass = 0; // tiles are immovable
 			wallTile.add_to_group(terrainCollGroup); // Instead of `group.add(object)` we use `object.add_to_group(group)`
@@ -282,13 +282,13 @@ class PlayState extends FlxState {
 			for (i in 0...levelData[j].length) {
 				switch (levelData[j][i]) {
 					case 2:
-						var newAgent = new AutoEntity(i * TILE_SIZE, j * TILE_SIZE, Std.int(TILE_SIZE * 0.95), Std.int(TILE_SIZE * 0.7), FlxColor.YELLOW);
+						var newAgent = new AutoEntity(i * TILE_SIZE, j * TILE_SIZE, Std.int(TILE_SIZE * 0.95), Std.int(TILE_SIZE * 0.7));
 						agents.add(newAgent);
 						newAgent.add_to_group(entitiesCollGroup);
 						newAgent.add_to_group(collidableBodies);
 						FlxMouseEventManager.add(newAgent, onAgentClick);
 					case 3:
-						var resource = new Supply(i * TILE_SIZE, j * TILE_SIZE, FlxG.random.int(1, 15), FlxColor.CYAN);
+						var resource = new Supply(i * TILE_SIZE, j * TILE_SIZE, FlxColor.CYAN);
 						resource.add_to_group(entitiesCollGroup);
 						resource.add_to_group(collidableBodies);
 					default:
@@ -299,7 +299,27 @@ class PlayState extends FlxState {
 
 		/// COLLISIONS
 		entitiesCollGroup.listen(terrainCollGroup);
-		entitiesCollGroup.listen(entitiesCollGroup);
+		entitiesCollGroup.listen(entitiesCollGroup, {
+			enter: (body1, body2, collData) -> {
+				switch (body1.bodyType) {
+					case 2: // we are an entity
+						var ent = cast(body1.get_object(), AutoEntity);
+						switch (body2.bodyType) {
+							case 2: // we hit an entity
+							case 3: // we hit a resource
+								var res = cast(body2.get_object(), Supply);
+								var chunk = res.deplete(10);
+								//ent.replenishEnergy(chunk * 20);
+							case any: // we hit anything else
+								// do nothing
+						}
+					case 3: // we are a resource
+					// do nothing
+					case any: // we are anything else
+						// do nothing
+				}
+			}
+		});
 
 		setCameraTargetAgent(agents.getFirstAlive());
 	}
