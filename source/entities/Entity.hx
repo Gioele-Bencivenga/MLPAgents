@@ -1,5 +1,6 @@
 package entities;
 
+import flixel.util.FlxTimer;
 import flixel.tweens.FlxTween;
 import flixel.util.FlxColor;
 import utilities.HxFuncs;
@@ -22,6 +23,16 @@ class Entity extends FlxSprite {
 	public static inline final MAX_ROTATIONAL_VELOCITY = 500;
 
 	/**
+	 * Default color of entities on the colorwheel.
+	 */
+	public static inline final BASE_HUE = 50;
+
+	/**
+	 * Color of hurt entities on the colorwheel.
+	 */
+	public static inline final HURT_HUE = 0;
+
+	/**
 	 * The color of this sprite from the colorwheel.
 	 */
 	var colorHue:Float;
@@ -30,11 +41,6 @@ class Entity extends FlxSprite {
 	 * Reference to this entity's physics body.
 	 */
 	public var body:Body;
-
-	/**
-	 * Whether the `Entity` can move or not.
-	 */
-	var canMove:Bool;
 
 	/**
 	 * `start` = min move speed (set as negative to go backwards)
@@ -64,25 +70,53 @@ class Entity extends FlxSprite {
 	 */
 	public var currEnergy(default, null):Float;
 
+	/**
+	 * Whether this entity is currently trying to bite what it comes in contact with or not.
+	 */
+	public var isBiting(default, null):Bool;
+
+	/**
+	 * How much this entity "bites".
+	 * 
+	 * Which is the amount we deplete from the resource when eating it.
+	 */
+	public var bite(default, null):Float;
+
+	/**
+	 * Multiplier applied to the amount of energy this entity eats.
+	 * 
+	 * Higher absorption means the entity will get more energy from the same amount of resource.
+	 */
+	public var absorption(default, null):Float;
+
+	/**
+	 * Whether this entity's energy can be absorbed by other entities.
+	 */
+	var canBeDepleted:Bool;
+
 	public function new(_x:Float, _y:Float, _width:Int, _height:Int) {
 		super(_x, _y);
 		makeGraphic(_width, _height, FlxColor.WHITE);
-		colorHue = 45;
+		colorHue = BASE_HUE;
 
-		canMove = true;
+		canBeDepleted = true;
+
 		moveRange = new FlxRange<Float>(-400, 400);
 		rotationRange = new FlxRange<Float>(-300, 300);
 
 		/// BODY
 		this.add_body({
-			mass: 0.3,
-			drag_length: 400,
-			rotational_drag: 50,
+			mass: FlxG.random.float(0.1, 0.5),
+			drag_length: FlxG.random.float(300, 500),
+			rotational_drag: FlxG.random.float(40, 60),
 			max_velocity_length: Entity.MAX_VELOCITY,
 			max_rotational_velocity: Entity.MAX_ROTATIONAL_VELOCITY,
 		}).bodyType = 2; // info used by environment sensors
 		body = this.get_body();
 
+		isBiting = true;
+		bite = FlxG.random.float(5, 10);
+		absorption = FlxG.random.float(5, 10);
 		maxEnergy = FlxG.random.float(500, 1000);
 		currEnergy = maxEnergy;
 	}
@@ -115,7 +149,7 @@ class Entity extends FlxSprite {
 	 * @param _moveAmount how much to move forward or backwards (-1 to 1), and how much energy will be depleted
 	 */
 	public function move(_moveAmount:Float) {
-		if (depleteEnergy(_moveAmount)) { // if the energy is successfully expended
+		if (useEnergy(_moveAmount)) { // if the energy is successfully expended
 			var mappedMoveAmt = HxFuncs.map(_moveAmount, -1, 1, moveRange.start, moveRange.end);
 
 			body.push(mappedMoveAmt, true);
@@ -128,7 +162,7 @@ class Entity extends FlxSprite {
 	 * @param _rotationAmount how much to rotate left or right (-1 to 1)
 	 */
 	public function rotate(_rotationAmount:Float) {
-		if (depleteEnergy(_rotationAmount / 2)) { // less energy is require to rotate
+		if (useEnergy(_rotationAmount / 2)) { // less energy is require to rotate
 			var mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
 
 			body.rotational_velocity = mappedRotationAmt;
@@ -158,12 +192,14 @@ class Entity extends FlxSprite {
 	}
 
 	/**
-	 * Depletes the entity's `currEnergy` by an absolute amount.
+	 * Uses the entity's `currEnergy`, usually to perform an action.
+	 * 
+	 * If enough energy is used `true` is returned and the action goes through.
 	 * 
 	 * @param _energyAmount the amount of energy we want to subtract from `currEnergy`
 	 * @return `true` if the depletion was successful, `false` if there wasn't enough energy to deplete
 	 */
-	function depleteEnergy(_energyAmount:Float):Bool {
+	public function useEnergy(_energyAmount:Float):Bool {
 		_energyAmount = Math.abs(_energyAmount);
 
 		if (currEnergy >= _energyAmount) { // if we have enough energy to deplete
@@ -183,6 +219,36 @@ class Entity extends FlxSprite {
 		var newCol = new FlxColor();
 		newCol.setHSB(colorHue, sat, bri, 1);
 		color = newCol;
+	}
+
+	/**
+	 * Depletes the entity's `currEnergy` by `_amount`, flips `canBeDepleted` to `false`.
+	 * 
+	 * @param _amount the amount we want to deplete the energy by
+	 * @return the amount of energy that was depleted
+	 */
+	public function deplete(_amount:Float):Float {
+		var depAmt = 0.;
+		if (canBeDepleted) {
+			colorHue = HURT_HUE;
+			canBeDepleted = false;
+
+			if (_amount <= currEnergy) {
+				currEnergy -= _amount;
+				depAmt = _amount; // we got out as much as we bit
+			} else {
+				depAmt = currEnergy; // we got out what was left
+				currEnergy = 0;
+			}
+
+			refreshColor();
+			var t = new FlxTimer().start(0.4, (_) -> {
+				canBeDepleted = true;
+				colorHue = BASE_HUE;
+			});
+		}
+
+		return depAmt;
 	}
 
 	/**

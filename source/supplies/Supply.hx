@@ -1,5 +1,8 @@
 package supplies;
 
+import flixel.util.FlxTimer;
+import flixel.util.FlxColor;
+import flixel.math.FlxPoint;
 import utilities.HxFuncs;
 import echo.Body;
 import flixel.FlxG;
@@ -40,6 +43,11 @@ class Supply extends FlxSprite {
 	 */
 	public var startAmount(default, null):Float;
 
+	/**
+	 * Tween that shrinks the size when depletion occurs.
+	 */
+	var sizeTween:FlxTween;
+
 	public function new(_x:Float, _y:Float, _color:Int, _minStartAmt:Int = 10, _maxStartAmt:Int = MAX_START_AMOUNT) {
 		super(_x, _y);
 
@@ -48,8 +56,7 @@ class Supply extends FlxSprite {
 		startAmount = FlxG.random.int(_minStartAmt, _maxStartAmt);
 		currAmount = startAmount;
 
-		makeGraphic(Std.int(currAmount), Std.int(currAmount), _color);
-
+		makeGraphic(Std.int(currAmount), Std.int(currAmount), FlxColor.CYAN);
 		this.add_body({
 			mass: HxFuncs.map(currAmount, 0, MAX_START_AMOUNT, 0, 0.6),
 			drag_length: 200,
@@ -59,7 +66,7 @@ class Supply extends FlxSprite {
 	}
 
 	/**
-	 * Depletes the supply's `currAmount` by `_amount`, flips `canBeDepleted` to `false` until the damage feedback ends.
+	 * Depletes the supply's `currAmount` by `_amount`, flips `canBeDepleted` to `false`.
 	 * 
 	 * @param _amount the amount we want to deplete the supply by
 	 * @return the amount of resource that was actually depleted
@@ -69,7 +76,7 @@ class Supply extends FlxSprite {
 		if (canBeDepleted) {
 			canBeDepleted = false;
 
-			if (currAmount >= _amount) {
+			if (_amount <= currAmount) {
 				currAmount -= _amount;
 				depAmt = _amount; // we got out as much as we bit
 			} else {
@@ -77,7 +84,10 @@ class Supply extends FlxSprite {
 				currAmount = 0;
 			}
 
-			updateSize();
+			refreshSize();
+			var t = new FlxTimer().start(0.1, (_) -> {
+				canBeDepleted = true;
+			});
 		}
 
 		return depAmt;
@@ -87,21 +97,16 @@ class Supply extends FlxSprite {
 		super.update(elapsed);
 	}
 
-	/** Having problems with this
+	/**
 	 * Sets the `width` and `height` of the object according to its `currAmount`. 
 	 * 
 	 * Flips `canBeDepleted` back to `true` when done.
 	 */
-	function updateSize() {
-		FlxTween.tween(this, {
-			width: currAmount,
-			height: currAmount
-		}, 0.2, {
-			ease: FlxEase.sineIn,
-			onComplete: function(_) {
-				canBeDepleted = true;
-			}
-		});
+	function refreshSize() {
+		body.scale_x = HxFuncs.map(currAmount, 0, startAmount, 0.2, 1);
+		body.scale_y = HxFuncs.map(currAmount, 0, startAmount, 0.2, 1);
+		scale.x = HxFuncs.map(currAmount, 0, startAmount, 0.2, 1);
+		scale.y = HxFuncs.map(currAmount, 0, startAmount, 0.2, 1);
 	}
 
 	/**
