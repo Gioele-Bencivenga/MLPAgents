@@ -71,14 +71,18 @@ class Entity extends FlxSprite {
 	public var currEnergy(default, null):Float;
 
 	/**
-	 * Whether this entity is currently trying to bite what it comes in contact with or not.
+	 * Whether this entity is currently trying to bite what it comes in contact with (`biteAmount > 0`).
+	 * 
+	 * And how hard it is currently trying to bite, `0.1..1`.
+	 * 
+	 * Any value of 0 or less means the entity isn't trying to bite.
 	 */
-	public var isBiting(default, null):Bool;
+	public var biteAmount(default, null):Float;
 
 	/**
 	 * How much this entity "bites".
 	 * 
-	 * Which is the amount we deplete from the resource when eating it.
+	 * Which is the amount we deplete from the resource/entity when biting it.
 	 */
 	public var bite(default, null):Float;
 
@@ -114,7 +118,7 @@ class Entity extends FlxSprite {
 		}).bodyType = 2; // info used by environment sensors
 		body = this.get_body();
 
-		isBiting = true;
+		biteAmount = 0;
 		bite = FlxG.random.float(5, 10);
 		absorption = FlxG.random.float(5, 10);
 		maxEnergy = FlxG.random.float(500, 1000);
@@ -166,6 +170,25 @@ class Entity extends FlxSprite {
 			var mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
 
 			body.rotational_velocity = mappedRotationAmt;
+		}
+	}
+
+	/**
+	 * Receives bite input from the network and tries to bite using energy.
+	 * 
+	 * If enough activation (`>0`) is received from the network the entity uses energy to bite accordingly.
+	 * 
+	 * @param _biteAmount how much the brain would like to bite, if at all
+	 */
+	public function controlBite(_biteAmount:Float) {
+		if (_biteAmount > 0) {
+			if (useEnergy(_biteAmount * 2)) {
+				biteAmount = _biteAmount;
+			} else {
+				biteAmount = 0;
+			}
+		} else {
+			biteAmount = 0;
 		}
 	}
 

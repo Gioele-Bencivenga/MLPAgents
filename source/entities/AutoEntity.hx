@@ -167,8 +167,11 @@ class AutoEntity extends Entity {
 		brain = new MLP(SENSORS_INPUTS // number of input neurons dedicated to sensors
 			+ 1 // own energy level neuron
 			+ 1 // bias neuron that's always firing 1
-			, 4 // hidden layer
-			, 2); // output layer, for now thrust and rotation
+			// hidden layer
+			, 4 // arbitrary number
+			// output layer
+			, 2 // thrust and steer outputs
+			+ 1); // bite output
 
 		brainInputs = [for (i in 0...brain.inputLayerSize) 0];
 	}
