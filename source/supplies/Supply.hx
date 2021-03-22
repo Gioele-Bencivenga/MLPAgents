@@ -82,6 +82,7 @@ class Supply extends FlxSprite {
 			} else {
 				depAmt = currAmount; // we got out what was left
 				currAmount = 0;
+				kill();
 			}
 
 			refreshSize();

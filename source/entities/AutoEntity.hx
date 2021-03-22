@@ -113,7 +113,7 @@ class AutoEntity extends Entity {
 
 		isCamTarget = false;
 
-		var rot = FlxG.random.float(20, 130);
+		var rot = FlxG.random.float(20, 150);
 		possibleRotations = new FlxRange(-rot, rot);
 
 		sensorsRotations = [
@@ -137,23 +137,28 @@ class AutoEntity extends Entity {
 			}
 		];
 
+		var lengthVals = [
+			FlxG.random.float(90, 200), // 120 original ratio val
+			FlxG.random.float(90, 200), // 135 original ratio val
+			FlxG.random.float(90, 200) // 160 original ratio val
+		];
 		sensorsLengths = [
 			for (i in 0...SENSORS_COUNT) {
 				switch (i) {
 					case 0:
-						120;
+						lengthVals[0];
 					case 1:
-						135;
+						lengthVals[1];
 					case 2:
-						160;
+						lengthVals[2];
 					case 3:
-						160;
+						lengthVals[2];
 					case 4:
-						135;
+						lengthVals[1];
 					case 5:
-						120;
-					default:
-						100;
+						lengthVals[0];
+					case any = _:
+						lengthVals[0];
 				}
 			}
 		];
@@ -161,7 +166,7 @@ class AutoEntity extends Entity {
 		sensors = [for (i in 0...SENSORS_COUNT) null]; // fill the sensors array with nulls
 
 		senserTimer = new FlxTimer();
-		sensorRefreshRate = FlxG.random.float(0.01, 0.5);
+		sensorRefreshRate = FlxG.random.float(0.005, 0.5);
 		senserTimer.start(sensorRefreshRate, (_) -> sense(), 0);
 
 		brain = new MLP(SENSORS_INPUTS // number of input neurons dedicated to sensors
@@ -171,7 +176,9 @@ class AutoEntity extends Entity {
 			, 4 // arbitrary number
 			// output layer
 			, 2 // thrust and steer outputs
-			+ 1); // bite output
+			+ 1 // bite output
+			+ 1 // dash output
+		);
 
 		brainInputs = [for (i in 0...brain.inputLayerSize) 0];
 	}
@@ -179,7 +186,7 @@ class AutoEntity extends Entity {
 	override function update(elapsed:Float) {
 		super.update(elapsed);
 
-		// act();
+		act();
 	}
 
 	/**
@@ -266,8 +273,11 @@ class AutoEntity extends Entity {
 		// decide how to act based on current inputs
 		var brainOutputs = brain.feedForward(brainInputs);
 
+		// communicate how to act to the body
 		move(brainOutputs[0]);
 		rotate(brainOutputs[1]);
+		controlBite(brainOutputs[2]);
+		controlDash(brainOutputs[3]);
 	}
 
 	/**
@@ -325,5 +335,3 @@ class AutoEntity extends Entity {
 		}
 	}
 }
-
-// add measure of fitness (lifetime/energy)

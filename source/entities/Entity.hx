@@ -98,15 +98,23 @@ class Entity extends FlxSprite {
 	 */
 	var canBeDepleted:Bool;
 
+	/**
+	 * Set to false when entity dashes and reset shortly after.
+	 */
+	var canDash:Bool;
+
 	public function new(_x:Float, _y:Float, _width:Int, _height:Int) {
 		super(_x, _y);
 		makeGraphic(_width, _height, FlxColor.WHITE);
 		colorHue = BASE_HUE;
 
 		canBeDepleted = true;
+		canDash = true;
 
-		moveRange = new FlxRange<Float>(-400, 400);
-		rotationRange = new FlxRange<Float>(-300, 300);
+		var randMove = FlxG.random.float(300, 500);
+		moveRange = new FlxRange<Float>(-randMove, randMove);
+		var randRot = FlxG.random.float(200, 400);
+		rotationRange = new FlxRange<Float>(-randRot, randRot);
 
 		/// BODY
 		this.add_body({
@@ -128,21 +136,26 @@ class Entity extends FlxSprite {
 	override function update(elapsed:Float) {
 		super.update(elapsed);
 
-		if (FlxG.keys.pressed.W) {
-			move(0.8);
-		} else if (FlxG.keys.pressed.S) {
-			move(-0.8);
-		}
+		/*
+			if (FlxG.keys.pressed.W) {
+				move(0.8);
+			} else if (FlxG.keys.pressed.S) {
+				move(-0.8);
+			}
 
-		if (FlxG.keys.pressed.F) {}
+			controlDash(0.5);
+			if (FlxG.keys.pressed.F) {
+				controlDash(0.7);
+			}
 
-		if (FlxG.keys.pressed.A) {
-			rotate(-0.8);
-		} else if (FlxG.keys.pressed.D) {
-			rotate(0.8);
-		} else {
-			rotate(0);
-		}
+			if (FlxG.keys.pressed.A) {
+				rotate(-0.8);
+			} else if (FlxG.keys.pressed.D) {
+				rotate(0.8);
+			} else {
+				rotate(0);
+			}
+		 */
 	}
 
 	/**
@@ -166,7 +179,7 @@ class Entity extends FlxSprite {
 	 * @param _rotationAmount how much to rotate left or right (-1 to 1)
 	 */
 	public function rotate(_rotationAmount:Float) {
-		if (useEnergy(_rotationAmount / 2)) { // less energy is require to rotate
+		if (useEnergy(_rotationAmount / 2)) { // less energy is required to rotate
 			var mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
 
 			body.rotational_velocity = mappedRotationAmt;
@@ -176,19 +189,42 @@ class Entity extends FlxSprite {
 	/**
 	 * Receives bite input from the network and tries to bite using energy.
 	 * 
-	 * If enough activation (`>0`) is received from the network the entity uses energy to bite accordingly.
+	 * If enough activation [`> 0`] is received from the network the entity uses energy to bite.
 	 * 
-	 * @param _biteAmount how much the brain would like to bite, if at all
+	 * @param _activation how much the brain would like to bite, if at all
 	 */
-	public function controlBite(_biteAmount:Float) {
-		if (_biteAmount > 0) {
-			if (useEnergy(_biteAmount * 2)) {
-				biteAmount = _biteAmount;
+	public function controlBite(_activation:Float) {
+		if (_activation > 0.2) {
+			if (useEnergy(_activation * 2)) {
+				biteAmount = _activation;
 			} else {
 				biteAmount = 0;
 			}
 		} else {
 			biteAmount = 0;
+		}
+		refreshColor();
+	}
+
+	/**
+	 * Receives dash input from the network and tries to dash using energy.
+	 * 
+	 * If enough activation [`> 0`] is received from the network the entity uses energy to dash.
+	 * 
+	 * @param _activation how much the brain would like to dash, if at all
+	 */
+	public function controlDash(_activation:Float) {
+		if (_activation > 0.6) { // high treshold for dashing
+			if (canDash) {
+				if (useEnergy(200)) { // lots of energy required to dash
+					body.push(moveRange.end / 2, true, VELOCITY);
+					canDash = false;
+
+					var t = new FlxTimer().start(0.3, function(_) {
+						canDash = true;
+					});
+				}
+			}
 		}
 	}
 
@@ -225,19 +261,31 @@ class Entity extends FlxSprite {
 	public function useEnergy(_energyAmount:Float):Bool {
 		_energyAmount = Math.abs(_energyAmount);
 
-		if (currEnergy >= _energyAmount) { // if we have enough energy to deplete
-			currEnergy -= _energyAmount; // deplete by the amount
+		if (currEnergy > 0) {
+			if (currEnergy >= _energyAmount) { // if we have enough energy to deplete
+				currEnergy -= _energyAmount; // deplete by the amount
 
-			refreshColor();
-
-			return true;
+				refreshColor();
+				return true;
+			} else {
+				return false;
+			}
 		} else {
+			kill();
 			return false;
 		}
 	}
 
 	function refreshColor() {
-		var sat = HxFuncs.map(currEnergy, 0, maxEnergy, 0, 1);
+		if (!canBeDepleted) {
+			colorHue = HURT_HUE;
+		} else if (biteAmount > 0) {
+			colorHue = 130 * (biteAmount * 2);
+		} else {
+			colorHue = BASE_HUE;
+		}
+
+		var sat = HxFuncs.map(currEnergy, 0, maxEnergy, 0.3, 1);
 		var bri = HxFuncs.map(currEnergy, 0, maxEnergy, 0.65, 1);
 		var newCol = new FlxColor();
 		newCol.setHSB(colorHue, sat, bri, 1);
@@ -253,21 +301,21 @@ class Entity extends FlxSprite {
 	public function deplete(_amount:Float):Float {
 		var depAmt = 0.;
 		if (canBeDepleted) {
-			colorHue = HURT_HUE;
 			canBeDepleted = false;
+			refreshColor();
 
 			if (_amount <= currEnergy) {
 				currEnergy -= _amount;
-				depAmt = _amount; // we got out as much as we bit
+				depAmt = _amount; // we depleted the full amount
 			} else {
-				depAmt = currEnergy; // we got out what was left
+				depAmt = currEnergy; // we depleted what was left
 				currEnergy = 0;
+				kill(); // we die when energy reaches 0
 			}
 
-			refreshColor();
-			var t = new FlxTimer().start(0.4, (_) -> {
+			var t = new FlxTimer().start(0.3, (_) -> {
 				canBeDepleted = true;
-				colorHue = BASE_HUE;
+				refreshColor();
 			});
 		}
 

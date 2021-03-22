@@ -239,7 +239,7 @@ class PlayState extends FlxState {
 	function generateCaveTilemap() {
 		// instantiate generator and generate the level
 		var gen = new Generator(70, 110);
-		var levelData:Array<Array<Int>> = gen.generateCave(2);
+		var levelData:Array<Array<Int>> = gen.generateCave(10);
 
 		// reset the groups before filling them again
 		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], [agents]);
@@ -304,20 +304,20 @@ class PlayState extends FlxState {
 				switch (body1.bodyType) {
 					case 2: // we are an entity
 						var ent = cast(body1.get_object(), AutoEntity);
-						if (ent.isBiting) { // we are trying to bite
+						if (ent.biteAmount > 0) { // we are trying to bite
 							switch (body2.bodyType) {
 								case 2: // we hit an entity
 									var hitEnt = cast(body2.get_object(), AutoEntity);
-									var chunk = hitEnt.deplete(ent.bite / 2);
+									var chunk = hitEnt.deplete((ent.bite * (ent.biteAmount * 2)) / 2);
 									ent.replenishEnergy(chunk * ent.absorption);
 
-									if (hitEnt.isBiting) { // other entity is biting too
-										var ourChunk = ent.deplete(hitEnt.bite / 2);
+									if (hitEnt.biteAmount > 0) { // other entity is biting too
+										var ourChunk = ent.deplete((hitEnt.bite * (hitEnt.biteAmount * 2)) / 2);
 										hitEnt.replenishEnergy(ourChunk * hitEnt.absorption);
 									}
 								case 3: // we hit a resource
 									var res = cast(body2.get_object(), Supply); // grasp the resource
-									var chunk = res.deplete(ent.bite); // bite a chunk out of it
+									var chunk = res.deplete(ent.bite * (ent.biteAmount * 2)); // bite a chunk out of it
 									ent.replenishEnergy(chunk * ent.absorption); // eat it
 								case any: // we hit anything else
 									// do nothing
