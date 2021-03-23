@@ -19,7 +19,7 @@ class Supply extends FlxSprite {
 	/**
 	 * Maximum amount that any resource can start from when created.
 	 */
-	public static inline final MAX_START_AMOUNT = 50;
+	public static inline final MAX_START_AMOUNT = 40;
 
 	/**
 	 * This supply's body.
@@ -48,7 +48,7 @@ class Supply extends FlxSprite {
 	 */
 	var sizeTween:FlxTween;
 
-	public function new(_x:Float, _y:Float, _color:Int, _minStartAmt:Int = 10, _maxStartAmt:Int = MAX_START_AMOUNT) {
+	public function new(_x:Float, _y:Float, _color:Int, _minStartAmt:Int = 15, _maxStartAmt:Int = MAX_START_AMOUNT) {
 		super(_x, _y);
 
 		canBeDepleted = true;

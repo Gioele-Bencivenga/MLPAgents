@@ -111,25 +111,25 @@ class Entity extends FlxSprite {
 		canBeDepleted = true;
 		canDash = true;
 
-		var randMove = FlxG.random.float(300, 500);
-		moveRange = new FlxRange<Float>(-randMove, randMove);
-		var randRot = FlxG.random.float(200, 400);
-		rotationRange = new FlxRange<Float>(-randRot, randRot);
+		var move = 400; // FlxG.random.float(300, 500);
+		moveRange = new FlxRange<Float>(-move, move);
+		var rot = 300; // FlxG.random.float(200, 400);
+		rotationRange = new FlxRange<Float>(-rot, rot);
 
 		/// BODY
 		this.add_body({
-			mass: FlxG.random.float(0.1, 0.5),
-			drag_length: FlxG.random.float(300, 500),
-			rotational_drag: FlxG.random.float(40, 60),
+			mass: 0.3, // FlxG.random.float(0.1, 0.5),
+			drag_length: 400, // FlxG.random.float(300, 500),
+			rotational_drag: 70, // FlxG.random.float(40, 80),
 			max_velocity_length: Entity.MAX_VELOCITY,
 			max_rotational_velocity: Entity.MAX_ROTATIONAL_VELOCITY,
 		}).bodyType = 2; // info used by environment sensors
 		body = this.get_body();
 
 		biteAmount = 0;
-		bite = FlxG.random.float(5, 10);
-		absorption = FlxG.random.float(5, 10);
-		maxEnergy = FlxG.random.float(500, 1000);
+		bite = 5; // FlxG.random.float(5, 10);
+		absorption = 5; // FlxG.random.float(5, 10);
+		maxEnergy = 1000; // FlxG.random.float(500, 1000);
 		currEnergy = maxEnergy;
 	}
 
@@ -194,7 +194,7 @@ class Entity extends FlxSprite {
 	 * @param _activation how much the brain would like to bite, if at all
 	 */
 	public function controlBite(_activation:Float) {
-		if (_activation > 0.2) {
+		if (_activation > 0) {
 			if (useEnergy(_activation * 2)) {
 				biteAmount = _activation;
 			} else {
@@ -214,10 +214,10 @@ class Entity extends FlxSprite {
 	 * @param _activation how much the brain would like to dash, if at all
 	 */
 	public function controlDash(_activation:Float) {
-		if (_activation > 0.6) { // high treshold for dashing
+		if (_activation > 0.5) {
 			if (canDash) {
 				if (useEnergy(200)) { // lots of energy required to dash
-					body.push(moveRange.end / 2, true, VELOCITY);
+					body.push(moveRange.end / 1.5, true, VELOCITY);
 					canDash = false;
 
 					var t = new FlxTimer().start(0.3, function(_) {
@@ -271,7 +271,6 @@ class Entity extends FlxSprite {
 				return false;
 			}
 		} else {
-			kill();
 			return false;
 		}
 	}
@@ -280,7 +279,7 @@ class Entity extends FlxSprite {
 		if (!canBeDepleted) {
 			colorHue = HURT_HUE;
 		} else if (biteAmount > 0) {
-			colorHue = 130 * (biteAmount * 2);
+			colorHue = 150 + (biteAmount * 2);
 		} else {
 			colorHue = BASE_HUE;
 		}
@@ -310,7 +309,6 @@ class Entity extends FlxSprite {
 			} else {
 				depAmt = currEnergy; // we depleted what was left
 				currEnergy = 0;
-				kill(); // we die when energy reaches 0
 			}
 
 			var t = new FlxTimer().start(0.3, (_) -> {

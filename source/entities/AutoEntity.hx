@@ -113,7 +113,7 @@ class AutoEntity extends Entity {
 
 		isCamTarget = false;
 
-		var rot = FlxG.random.float(20, 150);
+		var rot = 100.; // FlxG.random.float(20, 150);
 		possibleRotations = new FlxRange(-rot, rot);
 
 		sensorsRotations = [
@@ -138,9 +138,9 @@ class AutoEntity extends Entity {
 		];
 
 		var lengthVals = [
-			FlxG.random.float(90, 200), // 120 original ratio val
-			FlxG.random.float(90, 200), // 135 original ratio val
-			FlxG.random.float(90, 200) // 160 original ratio val
+			130, // FlxG.random.float(90, 200),
+			150, // FlxG.random.float(90, 200),
+			165 // FlxG.random.float(90, 200)
 		];
 		sensorsLengths = [
 			for (i in 0...SENSORS_COUNT) {
@@ -166,7 +166,7 @@ class AutoEntity extends Entity {
 		sensors = [for (i in 0...SENSORS_COUNT) null]; // fill the sensors array with nulls
 
 		senserTimer = new FlxTimer();
-		sensorRefreshRate = FlxG.random.float(0.005, 0.5);
+		sensorRefreshRate = 0.05; // FlxG.random.float(0.005, 0.5);
 		senserTimer.start(sensorRefreshRate, (_) -> sense(), 0);
 
 		brain = new MLP(SENSORS_INPUTS // number of input neurons dedicated to sensors
@@ -195,7 +195,7 @@ class AutoEntity extends Entity {
 	 * Called periodically by the `senserTimer`.
 	 */
 	function sense() {
-		if (useEnergy(0.1)) { // sensing costs 0.1 energy
+		if (useEnergy(0.05)) { // sensing costs 0.05 energy
 			var sensorInputs = [for (i in 0...SENSORS_INPUTS) 0.];
 			// we need an array of bodies for the linecast
 			var bodiesArray:Array<Body> = PlayState.collidableBodies.get_group_bodies();

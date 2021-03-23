@@ -284,13 +284,13 @@ class PlayState extends FlxState {
 					case 2:
 						var newAgent = new AutoEntity(i * TILE_SIZE, j * TILE_SIZE, Std.int(TILE_SIZE * 0.95), Std.int(TILE_SIZE * 0.7));
 						agents.add(newAgent);
-						newAgent.add_to_group(entitiesCollGroup);
 						newAgent.add_to_group(collidableBodies);
+						newAgent.add_to_group(entitiesCollGroup);
 						FlxMouseEventManager.add(newAgent, onAgentClick);
 					case 3:
 						var resource = new Supply(i * TILE_SIZE, j * TILE_SIZE, FlxColor.CYAN);
-						resource.add_to_group(entitiesCollGroup);
 						resource.add_to_group(collidableBodies);
+						resource.add_to_group(entitiesCollGroup);
 					default:
 						continue;
 				}
@@ -308,11 +308,11 @@ class PlayState extends FlxState {
 							switch (body2.bodyType) {
 								case 2: // we hit an entity
 									var hitEnt = cast(body2.get_object(), AutoEntity);
-									var chunk = hitEnt.deplete((ent.bite * (ent.biteAmount * 2)) / 2);
+									var chunk = hitEnt.deplete((ent.bite * (ent.biteAmount * 2)));
 									ent.replenishEnergy(chunk * ent.absorption);
 
 									if (hitEnt.biteAmount > 0) { // other entity is biting too
-										var ourChunk = ent.deplete((hitEnt.bite * (hitEnt.biteAmount * 2)) / 2);
+										var ourChunk = ent.deplete((hitEnt.bite * (hitEnt.biteAmount * 2)));
 										hitEnt.replenishEnergy(ourChunk * hitEnt.absorption);
 									}
 								case 3: // we hit a resource
