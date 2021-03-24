@@ -48,6 +48,8 @@ class MLP {
 	 */
 	var weightsCount:Int;
 
+	public var geneticMaterial(default, null):Array<Float>;
+
 	/**
 	 * Creates a new `MLP` instance and initializes each neuron to random values between -1 and 1 inclusive.
 	 * 
@@ -69,6 +71,9 @@ class MLP {
 		// calculate number of connection weights between neurons and initialise them with random values
 		weightsCount = (_inputLayerSize * hiddenLayer.length) + (hiddenLayer.length * outputLayer.length);
 		weights = [for (i in 0...weightsCount) FlxG.random.float(-1, 1)];
+
+		geneticMaterial = hiddenLayer.concat(outputLayer);
+		geneticMaterial = geneticMaterial.concat(weights);
 	}
 
 	/**
@@ -103,5 +108,27 @@ class MLP {
 		}
 
 		return outputOutputs;
+	}
+}
+
+/**
+ * Check to prove genetic material is correctly encoded
+ */
+class Test {
+	static function main() {
+		var _inputLayerSize = 32;
+		var _hiddenLayerSize = 4;
+		var hiddenLayer = [for (i in 0..._hiddenLayerSize) "h"];
+
+		var _outputLayerSize = 4;
+		var outputLayer = [for (i in 0..._outputLayerSize) "o"];
+
+		var weightsCount = (_inputLayerSize * hiddenLayer.length) + (hiddenLayer.length * outputLayer.length);
+		var weights = [for (i in 0...weightsCount) "w"];
+
+		var geneticMaterial = hiddenLayer.concat(outputLayer);
+		geneticMaterial = geneticMaterial.concat(weights);
+
+		trace(geneticMaterial);
 	}
 }

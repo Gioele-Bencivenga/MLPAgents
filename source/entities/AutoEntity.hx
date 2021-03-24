@@ -60,7 +60,7 @@ class AutoEntity extends Entity {
 	/**
 	 * This entity's multilayer perceptron, getting inputs from the sensors and giving outputs as movement.
 	 */
-	var brain:MLP;
+	public var brain(default, null):MLP;
 
 	/**
 	 * The timer that will `sense()` each `sensorRefreshRate` seconds.
@@ -108,8 +108,24 @@ class AutoEntity extends Entity {
 	 */
 	var brainInputs:Array<Float>;
 
-	public function new(_x:Float, _y:Float, _width:Int, _height:Int) {
-		super(_x, _y, _width, _height);
+	/**
+	 * If this entity has a functioning brain and is alive.
+	 * 
+	 * Flipped to true after creating the brain and to false when energy < 10.
+	 * 
+	 * Being conscious or not influences being considered for reproduction.
+	 */
+	public var isConscious(default, null):Bool = false;
+
+	public function new() {
+		super();
+	}
+
+	/**
+	 * Initialise the Entity by creating sensors, adding body, creating brain ecc..
+	 */
+	override public function init(_x:Float, _y:Float, _width:Int, _height:Int) {
+		super.init(_x, _y, _width, _height);
 
 		isCamTarget = false;
 
@@ -181,6 +197,8 @@ class AutoEntity extends Entity {
 		);
 
 		brainInputs = [for (i in 0...brain.inputLayerSize) 0];
+
+		isConscious = true;
 	}
 
 	override function update(elapsed:Float) {
@@ -220,15 +238,15 @@ class AutoEntity extends Entity {
 					var lineColor = FlxColor.RED;
 					switch (hit.body.bodyType) {
 						case 1: // hit a wall
-							lineColor = FlxColor.YELLOW;
+							lineColor = FlxColor.WHITE;
 							sensorInputs[i] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToWall neuron
 						case 2: // hit an agent
-							lineColor = FlxColor.MAGENTA;
+							lineColor = FlxColor.ORANGE;
 							sensorInputs[i + 1] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToEntity neuron
 							var agent = cast(hit.body.get_object(), AutoEntity);
 							sensorInputs[i + 3] = HxFuncs.map(agent.currEnergy, 0, agent.maxEnergy, 0, 1); // put agent's energy amount in entityEnergy neuron
 						case 3: // hit a resource
-							lineColor = FlxColor.CYAN;
+							lineColor = FlxColor.MAGENTA;
 							sensorInputs[i + 2] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToResource neuron
 							var supp = cast(hit.body.get_object(), Supply);
 							sensorInputs[i + 4] = HxFuncs.map(supp.currAmount, 0, Supply.MAX_START_AMOUNT, 0, 1); // put supply's amount in supplyAmount neuron
@@ -270,14 +288,22 @@ class AutoEntity extends Entity {
 	}
 
 	function act() {
-		// decide how to act based on current inputs
-		var brainOutputs = brain.feedForward(brainInputs);
+		if (brain != null) {
+			// decide how to act based on current inputs
+			var brainOutputs = brain.feedForward(brainInputs);
 
-		// communicate how to act to the body
-		move(brainOutputs[0]);
-		rotate(brainOutputs[1]);
-		controlBite(brainOutputs[2]);
-		controlDash(brainOutputs[3]);
+			// communicate how to act to the body
+			move(brainOutputs[0]);
+			rotate(brainOutputs[1]);
+			controlBite(brainOutputs[2]);
+			controlDash(brainOutputs[3]);
+		}
+
+		if (currEnergy <= 10) {
+			isConscious = false;
+		} else {
+			isConscious = true;
+		}
 	}
 
 	/**
@@ -328,10 +354,13 @@ class AutoEntity extends Entity {
 	}
 
 	override function kill() {
-		super.kill();
-		if (senserTimer.active) {
-			senserTimer.cancel();
-			senserTimer.destroy();
+		if (senserTimer != null) {
+			if (senserTimer.active) {
+				senserTimer.cancel();
+				senserTimer.destroy();
+			}
 		}
+		PlayState.agents.remove(this);
+		super.kill();
 	}
 }

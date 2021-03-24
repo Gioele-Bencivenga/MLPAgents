@@ -1,5 +1,6 @@
 package entities;
 
+import states.PlayState;
 import flixel.util.FlxTimer;
 import flixel.tweens.FlxTween;
 import flixel.util.FlxColor;
@@ -25,7 +26,7 @@ class Entity extends FlxSprite {
 	/**
 	 * Default color of entities on the colorwheel.
 	 */
-	public static inline final BASE_HUE = 50;
+	public static inline final BASE_HUE = 60;
 
 	/**
 	 * Color of hurt entities on the colorwheel.
@@ -71,6 +72,13 @@ class Entity extends FlxSprite {
 	public var currEnergy(default, null):Float;
 
 	/**
+	 * The fitness score of this entity.
+	 * 
+	 * This variable is increased over time by an amount proportionate to the entity's energy level.
+	 */
+	public var fitnessScore(default, null):Float;
+
+	/**
 	 * Whether this entity is currently trying to bite what it comes in contact with (`biteAmount > 0`).
 	 * 
 	 * And how hard it is currently trying to bite, `0.1..1`.
@@ -103,9 +111,18 @@ class Entity extends FlxSprite {
 	 */
 	var canDash:Bool;
 
-	public function new(_x:Float, _y:Float, _width:Int, _height:Int) {
-		super(_x, _y);
+	public function new() {
+		super();
+	}
+
+	/**
+	 * Initialise the Entity by adding body, setting color and values.
+	 */
+	public function init(_x:Float, _y:Float, _width:Int, _height:Int) {
+		x = _x;
+		y = _y;
 		makeGraphic(_width, _height, FlxColor.WHITE);
+
 		colorHue = BASE_HUE;
 
 		canBeDepleted = true;
@@ -113,7 +130,7 @@ class Entity extends FlxSprite {
 
 		var move = 400; // FlxG.random.float(300, 500);
 		moveRange = new FlxRange<Float>(-move, move);
-		var rot = 300; // FlxG.random.float(200, 400);
+		var rot = 400; // FlxG.random.float(200, 400);
 		rotationRange = new FlxRange<Float>(-rot, rot);
 
 		/// BODY
@@ -127,10 +144,15 @@ class Entity extends FlxSprite {
 		body = this.get_body();
 
 		biteAmount = 0;
-		bite = 5; // FlxG.random.float(5, 10);
-		absorption = 5; // FlxG.random.float(5, 10);
+		bite = 10; // FlxG.random.float(5, 10);
+		absorption = 6; // FlxG.random.float(5, 10);
 		maxEnergy = 1000; // FlxG.random.float(500, 1000);
 		currEnergy = maxEnergy;
+
+		fitnessScore = 0;
+		var ft = new FlxTimer().start(0.1, _ -> {
+			calculateFitness();
+		});
 	}
 
 	override function update(elapsed:Float) {
@@ -143,15 +165,20 @@ class Entity extends FlxSprite {
 				move(-0.8);
 			}
 
-			controlDash(0.5);
+			controlBite(0);
 			if (FlxG.keys.pressed.F) {
+				controlBite(0.5);
+			}
+
+			controlDash(0.5);
+			if(FlxG.keys.pressed.SHIFT){
 				controlDash(0.7);
 			}
 
 			if (FlxG.keys.pressed.A) {
-				rotate(-0.8);
+				rotate(-1);
 			} else if (FlxG.keys.pressed.D) {
-				rotate(0.8);
+				rotate(1);
 			} else {
 				rotate(0);
 			}
@@ -216,7 +243,7 @@ class Entity extends FlxSprite {
 	public function controlDash(_activation:Float) {
 		if (_activation > 0.5) {
 			if (canDash) {
-				if (useEnergy(200)) { // lots of energy required to dash
+				if (useEnergy(150)) { // lots of energy required to dash
 					body.push(moveRange.end / 1.5, true, VELOCITY);
 					canDash = false;
 
@@ -275,16 +302,20 @@ class Entity extends FlxSprite {
 		}
 	}
 
+	function calculateFitness() {
+		fitnessScore += HxFuncs.map(currEnergy, 0, maxEnergy, 0, 1);
+	}
+
 	function refreshColor() {
 		if (!canBeDepleted) {
 			colorHue = HURT_HUE;
 		} else if (biteAmount > 0) {
-			colorHue = 150 + (biteAmount * 2);
+			colorHue = 170;
 		} else {
 			colorHue = BASE_HUE;
 		}
 
-		var sat = HxFuncs.map(currEnergy, 0, maxEnergy, 0.3, 1);
+		var sat = HxFuncs.map(currEnergy, 0, maxEnergy, 0.25, 1);
 		var bri = HxFuncs.map(currEnergy, 0, maxEnergy, 0.65, 1);
 		var newCol = new FlxColor();
 		newCol.setHSB(colorHue, sat, bri, 1);
@@ -302,6 +333,10 @@ class Entity extends FlxSprite {
 		if (canBeDepleted) {
 			canBeDepleted = false;
 			refreshColor();
+			var t = new FlxTimer().start(0.15, (_) -> {
+				canBeDepleted = true;
+				refreshColor();
+			});
 
 			if (_amount <= currEnergy) {
 				currEnergy -= _amount;
@@ -310,11 +345,6 @@ class Entity extends FlxSprite {
 				depAmt = currEnergy; // we depleted what was left
 				currEnergy = 0;
 			}
-
-			var t = new FlxTimer().start(0.3, (_) -> {
-				canBeDepleted = true;
-				refreshColor();
-			});
 		}
 
 		return depAmt;
@@ -324,8 +354,10 @@ class Entity extends FlxSprite {
 	 * Killing this object will also remove its physics body.
 	 */
 	override function kill() {
-		super.kill();
+		this.remove_from_group(PlayState.collidableBodies);
+		this.remove_from_group(PlayState.entitiesCollGroup);
 		body.remove_body();
-		// body.dispose(); is this needed?
+		alive
+		super.kill();
 	}
 }

@@ -1,5 +1,6 @@
 package supplies;
 
+import states.PlayState;
 import flixel.util.FlxTimer;
 import flixel.util.FlxColor;
 import flixel.math.FlxPoint;
@@ -48,15 +49,27 @@ class Supply extends FlxSprite {
 	 */
 	var sizeTween:FlxTween;
 
-	public function new(_x:Float, _y:Float, _color:Int, _minStartAmt:Int = 15, _maxStartAmt:Int = MAX_START_AMOUNT) {
-		super(_x, _y);
+	public function new() {
+		super();
+	}
+
+	/**
+	 * Initializes the resource.
+	 */
+	public function init(_x:Float, _y:Float, _minStartAmt:Int = 15, _maxStartAmt:Int = MAX_START_AMOUNT) {
+		x = _x;
+		y = _y;
 
 		canBeDepleted = true;
 
 		startAmount = FlxG.random.int(_minStartAmt, _maxStartAmt);
 		currAmount = startAmount;
 
-		makeGraphic(Std.int(currAmount), Std.int(currAmount), FlxColor.CYAN);
+		makeGraphic(Std.int(currAmount), Std.int(currAmount), FlxColor.WHITE);
+		var newCol = new FlxColor();
+		newCol.setHSB(310, 1, 1, 1);
+		color = newCol;
+
 		this.add_body({
 			mass: HxFuncs.map(currAmount, 0, MAX_START_AMOUNT, 0, 0.6),
 			drag_length: 200,
@@ -86,7 +99,7 @@ class Supply extends FlxSprite {
 			}
 
 			refreshSize();
-			var t = new FlxTimer().start(0.1, (_) -> {
+			var t = new FlxTimer().start(0.05, (_) -> {
 				canBeDepleted = true;
 			});
 		}
@@ -115,6 +128,8 @@ class Supply extends FlxSprite {
 	 */
 	override function kill() {
 		super.kill();
-		this.get_body().remove_body();
+		this.remove_from_group(PlayState.collidableBodies);
+		this.remove_from_group(PlayState.entitiesCollGroup);
+		body.remove_body();
 	}
 }

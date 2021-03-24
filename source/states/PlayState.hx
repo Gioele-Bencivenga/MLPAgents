@@ -1,5 +1,6 @@
 package states;
 
+import flixel.util.FlxTimer;
 import openfl.display.StageQuality;
 import flixel.FlxObject;
 import haxe.ui.themes.Theme;
@@ -52,6 +53,11 @@ class PlayState extends FlxState {
 	public static inline final CAM_MAX_ZOOM:Float = 1.6;
 
 	/**
+	 * Maximum number of agents that can be in the simulation at any time.
+	 */
+	public static inline final MAX_AGENTS:Int = 30;
+
+	/**
 	 * Canvas is needed in order to `drawLine()` with `DebugLine`.
 	 */
 	public static var canvas:FlxSprite;
@@ -74,9 +80,16 @@ class PlayState extends FlxState {
 	public static var collidableBodies:FlxGroup;
 
 	/**
-	 * Typed group of agents, mainly used by the camera right now.
+	 * Typed group of our agents in the world.
+	 * 
+	 * Used by the camera and cleanup function.
 	 */
-	var agents:FlxTypedGroup<AutoEntity>;
+	public static var agents:FlxTypedGroup<AutoEntity>;
+
+	/**
+	 * Typed group of our resources in the world.
+	 */
+	public static var resources:FlxTypedGroup<Supply>;
 
 	/**
 	 * Simulation camera, the camera displaying the simulation.
@@ -110,17 +123,17 @@ class PlayState extends FlxState {
 	}
 
 	override function create() {
-		FlxG.game.stage.quality = StageQuality.LOW;
-
 		setupCameras();
-
+		// create the ui and wire up functions to buttons
 		setupUI();
-
 		// create groups for collision handling and other stuff
 		setupGroups();
-
 		// generate world
 		generateCaveTilemap();
+
+		var t = new FlxTimer().start(1, function(_) {
+			cleanupDeadAgents();
+		}, 0);
 	}
 
 	function setupCameras() {
@@ -154,7 +167,8 @@ class PlayState extends FlxState {
 
 		/// OTHER GROUPS
 		collidableBodies = new FlxGroup();
-		agents = new FlxTypedGroup<AutoEntity>(20);
+		agents = new FlxTypedGroup<AutoEntity>();
+		resources = new FlxTypedGroup<Supply>();
 	}
 
 	/**
@@ -188,7 +202,7 @@ class PlayState extends FlxState {
 	}
 
 	function btn_clearWorld_onClick(_) {
-		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], [agents]);
+		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], agents, resources);
 		// destroy world
 		if (FlxEcho.instance != null)
 			FlxEcho.clear();
@@ -226,23 +240,13 @@ class PlayState extends FlxState {
 		simCam.targetZoom = HxFuncs.map(slider.pos, slider.min, slider.max, CAM_MIN_ZOOM, CAM_MAX_ZOOM);
 	}
 
-	override function update(elapsed:Float) {
-		super.update(elapsed);
-
-		if (FlxG.mouse.wheel != 0) {
-			var slider = uiView.findComponent("sld_zoom", Slider);
-
-			slider.pos += FlxMath.bound(FlxG.mouse.wheel, -7, 7);
-		}
-	}
-
 	function generateCaveTilemap() {
 		// instantiate generator and generate the level
 		var gen = new Generator(70, 110);
 		var levelData:Array<Array<Int>> = gen.generateCave(10);
 
 		// reset the groups before filling them again
-		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], [agents]);
+		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], agents, resources);
 
 		// destroy previous world
 		if (FlxEcho.instance != null)
@@ -254,6 +258,7 @@ class PlayState extends FlxState {
 		});
 		FlxEcho.reset_acceleration = true;
 		FlxEcho.updates = simUpdates; // if the sim is paused pause the world too
+		FlxEcho.instance.world.iterations = 2;
 
 		// generate physics bodies for our Tilemap from the levelData - making sure to ignore any tile with the index 2 or 3 so we can create objects out of them later
 		var tiles = TileMap.generate(levelData.flatten2DArray(), TILE_SIZE, TILE_SIZE, levelData[0].length, levelData.length, 0, 0, 1, null, [2, 3]);
@@ -282,15 +287,9 @@ class PlayState extends FlxState {
 			for (i in 0...levelData[j].length) {
 				switch (levelData[j][i]) {
 					case 2:
-						var newAgent = new AutoEntity(i * TILE_SIZE, j * TILE_SIZE, Std.int(TILE_SIZE * 0.95), Std.int(TILE_SIZE * 0.7));
-						agents.add(newAgent);
-						newAgent.add_to_group(collidableBodies);
-						newAgent.add_to_group(entitiesCollGroup);
-						FlxMouseEventManager.add(newAgent, onAgentClick);
+						createAgent(i * TILE_SIZE, j * TILE_SIZE);
 					case 3:
-						var resource = new Supply(i * TILE_SIZE, j * TILE_SIZE, FlxColor.CYAN);
-						resource.add_to_group(collidableBodies);
-						resource.add_to_group(entitiesCollGroup);
+						createResource(i * TILE_SIZE, j * TILE_SIZE);
 					default:
 						continue;
 				}
@@ -300,7 +299,7 @@ class PlayState extends FlxState {
 		/// COLLISIONS
 		entitiesCollGroup.listen(terrainCollGroup);
 		entitiesCollGroup.listen(entitiesCollGroup, {
-			enter: (body1, body2, collData) -> {
+			stay: (body1, body2, collData) -> {
 				switch (body1.bodyType) {
 					case 2: // we are an entity
 						var ent = cast(body1.get_object(), AutoEntity);
@@ -323,6 +322,18 @@ class PlayState extends FlxState {
 									// do nothing
 							}
 						}
+					case 3: // we are a resource
+						switch (body2.bodyType) {
+							case 2: // we hit an entity
+								var ent = cast(body2.get_object(), AutoEntity);
+								if (ent.biteAmount > 0) { // entity is biting
+									var res = cast(body1.get_object(), Supply);
+									var chunk = res.deplete(ent.bite * (ent.biteAmount * 2));
+									ent.replenishEnergy(chunk * ent.absorption);
+								}
+							case any: // we hit anything else
+								// do nothing
+						}
 					case any: // we are anything else
 						// do nothing
 				}
@@ -330,6 +341,16 @@ class PlayState extends FlxState {
 		});
 
 		setCameraTargetAgent(agents.getFirstAlive());
+	}
+
+	override function update(elapsed:Float) {
+		super.update(elapsed);
+
+		// if (FlxG.mouse.wheel != 0) {
+		//	var slider = uiView.findComponent("sld_zoom", Slider);
+
+		//	slider.pos += FlxMath.bound(FlxG.mouse.wheel, -7, 7);
+		// }
 	}
 
 	/**
@@ -363,19 +384,168 @@ class PlayState extends FlxState {
 	 * @param _groupsToEmpty an array containing the `FlxGroup`s that you want to reset.
 	 * @param _typedGroups need to empty some `FlxTypedGroup<AutoEntity>` too?
 	 */
-	function emptyGroups(_groupsToEmpty:Array<FlxGroup>, ?_typedGroups:Array<FlxTypedGroup<AutoEntity>>) {
+	function emptyGroups(_groupsToEmpty:Array<FlxGroup>, ?_agentGroup:FlxTypedGroup<AutoEntity>, ?_resGroup:FlxTypedGroup<Supply>) {
 		for (group in _groupsToEmpty) {
 			group.kill();
 			group.clear();
 			group.revive();
 		}
 
-		if (_typedGroups.length > 0) {
-			for (group in _typedGroups) {
-				group.kill();
-				group.clear();
-				group.revive();
+		if (_agentGroup.length > 0) {
+			_agentGroup.kill();
+			_agentGroup.clear();
+			_agentGroup.revive();
+		}
+
+		if (_resGroup.length > 0) {
+			_resGroup.kill();
+			_resGroup.clear();
+			_resGroup.revive();
+		}
+	}
+
+	/**
+	 * This function is periodically run by a timer.
+	 * 
+	 * It replaces dead agents with low energy with new random agents.
+	 * 
+	 * The last born agent is then followed by the camera.
+	 */
+	function cleanupDeadAgents() {
+		for (agent in agents) {
+			if (agent.currEnergy <= 0.15) {
+				if (agent.alive && agent.exists) {
+					var agX = agent.body.x;
+					var agY = agent.body.y;
+					agent.kill(); // kill previous agent
+
+					runSelection(agents);
+
+					// reproduction is just random right now
+					var newAgent = createAgent(agX, agY);
+					// setCameraTargetAgent(newAgent);
+				}
 			}
 		}
+	}
+
+	/**
+	 * Tournament selection.
+	 * 
+	 * - get 3 agents at random from `_agents`
+	 * - get the first 2 and discard the one with the least fitness
+	 * - reproduce the two remaining agents
+	 * 
+	 * @param agents population from which to choose the individuals
+	 */
+	function runSelection(_agents:FlxTypedGroup<AutoEntity>) {
+		// need to make sure agent is initialized before using it 
+		// use isConscious
+		var participant1 = _agents.getRandom();
+		_agents.remove(participant1); // remove chosen participant so it's not considered for reproduction with itself
+		var participant2 = _agents.getRandom();
+		_agents.remove(participant2);
+		var participant3 = _agents.getRandom();
+
+		var parent1 = getTournamentWinner(participant1, participant2);
+		var parent2 = participant3;
+		var a = uniformCrossover(parent1.brain.geneticMaterial, parent2.brain.geneticMaterial);
+	}
+
+	/**
+	 * Returns the agent with the highest fitness score between the 2.
+	 * 
+	 * In case of same fitness the first participant wins.
+	 * @param _part1 first participant in the tournament 
+	 * @param _part2 second participant in the tournament 
+	 */
+	function getTournamentWinner(_part1:AutoEntity, _part2:AutoEntity) {
+		var winner = _part1;
+		if (_part1.fitnessScore < _part2.fitnessScore)
+			winner = _part2;
+		return winner;
+	}
+
+	function uniformCrossover(_material1:Array<Float>, _material2:Array<Float>) {
+		var uniformMaterial = [for (i in 0..._material1.length) 0.];
+
+		for (i in 0...uniformMaterial.length) {
+			switch (FlxG.random.bool()) {
+				case true:
+					uniformMaterial[i] = _material1[i];
+				case false:
+					uniformMaterial[i] = _material2[i];
+			}
+		}
+
+		trace('${_material1}\n${_material2}\n${uniformMaterial}');
+
+		return uniformMaterial;
+	}
+
+	/**
+	 * Creates a new agent and adds it to the appropriate groups.
+	 * @param _x x position of new agent
+	 * @param _y y position of new agent
+	 * @return the newly created agent
+	 */
+	function createAgent(_x:Float, _y:Float):AutoEntity {
+		var newAgent = agents.recycle(AutoEntity.new); // recycle agent from pool
+		newAgent.init(_x, _y, 30, 15); // add body, brain ecc
+		agents.add(newAgent); // add to recycling (and camera) group
+		newAgent.add_to_group(collidableBodies); // add to linecasting group
+		newAgent.add_to_group(entitiesCollGroup); // add to collision group
+		FlxMouseEventManager.add(newAgent, onAgentClick); // add event listener for mouse clicks
+
+		return newAgent;
+	}
+
+	/**
+	 * Creates a new resource and adds it to the appropriate groups.
+	 * @param _x x position of new resource
+	 * @param _y y position of new resource
+	 */
+	function createResource(_x:Float, _y:Float) {
+		var newRes = resources.recycle(Supply.new); // recycle
+		newRes.init(_x, _y); // initialise values
+		resources.add(newRes); // add to recycling group
+		newRes.add_to_group(collidableBodies); // add to bodies visible by sensors
+		newRes.add_to_group(entitiesCollGroup); // add to bodies that should collide
+	}
+}
+
+/**
+ * Uniform crossover proof.
+ * 
+ * Run on try.haxe.org
+ */
+class Test {
+	static function main() {
+		var _inputLayerSize = 32;
+		var _hiddenLayerSize = 4;
+		var hiddenLayer = [for (i in 0..._hiddenLayerSize) 0];
+
+		var _outputLayerSize = 4;
+		var outputLayer = [for (i in 0..._outputLayerSize) 1];
+
+		var weightsCount = (_inputLayerSize * hiddenLayer.length) + (hiddenLayer.length * outputLayer.length);
+		var weights = [for (i in 0...weightsCount) 2];
+
+		var geneticMaterial1 = hiddenLayer.concat(outputLayer);
+		geneticMaterial1 = geneticMaterial1.concat(weights);
+
+		var geneticMaterial2 = [for (i in 0...geneticMaterial1.length) geneticMaterial1[i] + 1];
+		for (i in 0...geneticMaterial2.length) {}
+
+		var uniformOffspring = [for (i in 0...geneticMaterial1.length) 0.];
+		for (i in 0...uniformOffspring.length) {
+			var rand = Std.random(10);
+			if (rand > 5) {
+				uniformOffspring[i] = geneticMaterial2[i];
+			} else
+				uniformOffspring[i] = geneticMaterial1[i];
+		}
+
+		trace('${geneticMaterial1}\n${geneticMaterial2}\n${uniformOffspring}');
 	}
 }
