@@ -357,7 +357,6 @@ class Entity extends FlxSprite {
 		this.remove_from_group(PlayState.collidableBodies);
 		this.remove_from_group(PlayState.entitiesCollGroup);
 		body.remove_body();
-		alive
 		super.kill();
 	}
 }

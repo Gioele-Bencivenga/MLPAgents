@@ -202,9 +202,18 @@ class AutoEntity extends Entity {
 	}
 
 	override function update(elapsed:Float) {
-		super.update(elapsed);
+		if (FlxEcho.updates) {
+			if (!senserTimer.active) {
+				senserTimer.start(sensorRefreshRate, (_) -> sense(), 0);
+			}
 
-		act();
+			super.update(elapsed);
+
+			act();
+			
+		} else {
+			senserTimer.cancel();
+		}
 	}
 
 	/**
@@ -354,6 +363,7 @@ class AutoEntity extends Entity {
 	}
 
 	override function kill() {
+		isConscious = false;
 		if (senserTimer != null) {
 			if (senserTimer.active) {
 				senserTimer.cancel();

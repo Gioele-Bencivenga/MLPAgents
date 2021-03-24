@@ -108,7 +108,9 @@ class Supply extends FlxSprite {
 	}
 
 	override function update(elapsed:Float) {
-		super.update(elapsed);
+		if (FlxEcho.updates) {
+			super.update(elapsed);
+		}
 	}
 
 	/**
