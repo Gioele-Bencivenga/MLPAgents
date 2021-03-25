@@ -1,5 +1,6 @@
 package states;
 
+import haxe.ds.Vector;
 import haxe.ds.List;
 import haxe.ui.containers.ListView;
 import flixel.util.FlxTimer;
@@ -60,6 +61,11 @@ class PlayState extends FlxState {
 	public static inline final MAX_AGENTS:Int = 30;
 
 	/**
+	 * Maximum number of agents that can be in the simulation at any time.
+	 */
+	public static inline final MAX_RESOURCES:Int = 200;
+
+	/**
 	 * Canvas is needed in order to `drawLine()` with `DebugLine`.
 	 */
 	public static var canvas:FlxSprite;
@@ -118,10 +124,12 @@ class PlayState extends FlxState {
 	 */
 	var agentsListView:ListView;
 
+	var chosenListView:ListView;
+
 	/**
 	 * List containing our agents in the world.
 	 */
-	var agentsList:List<AutoEntity>;
+	var agentsList:FlxTypedGroup<AutoEntity>;
 
 	/**
 	 * Automatically sets the value of `FlxEcho.updates`.
@@ -183,9 +191,9 @@ class PlayState extends FlxState {
 
 		/// OTHER GROUPS
 		collidableBodies = new FlxGroup();
-		agents = new FlxTypedGroup<AutoEntity>();
-		resources = new FlxTypedGroup<Supply>();
-		agentsList = new List<AutoEntity>();
+		resources = new FlxTypedGroup<Supply>(MAX_RESOURCES);
+		agents = new FlxTypedGroup<AutoEntity>(MAX_AGENTS);
+		agentsList = new FlxTypedGroup<AutoEntity>(MAX_AGENTS);
 	}
 
 	/**
@@ -209,8 +217,7 @@ class PlayState extends FlxState {
 		uiView.findComponent("mn_link_website", MenuItem).onClick = link_website_onClick;
 		uiView.findComponent("mn_link_github", MenuItem).onClick = link_github_onClick;
 		agentsListView = uiView.findComponent("lst_agents", ListView);
-
-		var agentsList:List<AutoEntity>;
+		chosenListView = uiView.findComponent("lst_chosen_agents", ListView);
 		uiView.findComponent("btn_play_pause", Button).onClick = btn_play_pause_onClick;
 		uiView.findComponent("btn_target", Button).onClick = btn_target_onClick;
 		uiView.findComponent("sld_zoom", Slider).onChange = sld_zoom_onChange;
@@ -263,7 +270,7 @@ class PlayState extends FlxState {
 	function generateCaveTilemap() {
 		// instantiate generator and generate the level
 		var gen = new Generator(70, 110);
-		var levelData:Array<Array<Int>> = gen.generateCave(4);
+		var levelData:Array<Array<Int>> = gen.generateCave(5);
 
 		// reset the groups before filling them again
 		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], agents, resources);
@@ -315,10 +322,6 @@ class PlayState extends FlxState {
 				}
 			}
 		}
-
-		refreshAgentsListView();
-
-		var agentsList:List<AutoEntity>;
 
 		/// COLLISIONS
 		entitiesCollGroup.listen(terrainCollGroup);
@@ -434,29 +437,26 @@ class PlayState extends FlxState {
 	 * This function is periodically run by a timer.
 	 * 
 	 * It replaces dead agents with low energy with new random agents.
-	 * 
-	 * The last born agent is then followed by the camera.
 	 */
 	function cleanupDeadAgents() {
-		for (agent in agents) {
-			if (agent.currEnergy <= 0.15) {
+		if (FlxEcho.updates) {
+			for (agent in agents) {
 				if (agent.alive && agent.exists) {
-					var agX = agent.body.x;
-					var agY = agent.body.y;
-					agent.kill(); // kill previous agent
-					agentsList.remove(agent);
-					refreshAgentsListView();
+					if (agent.currEnergy <= 1) {
+						var agX = agent.body.x;
+						var agY = agent.body.y;
+						agent.kill(); // kill previous agent
+						refreshAgentsListView();
 
-					runSelection(agentsList);
+						runSelection(agents);
 
-					// reproduction is just random right now
-					var newAgent = createAgent(agX, agY);
-					// setCameraTargetAgent(newAgent);
+						// reproduction is just random right now
+						var newAgent = createAgent(agX, agY);
+						// setCameraTargetAgent(newAgent);
+					}
 				}
 			}
 		}
-
-		var agentsList:List<AutoEntity>;
 	}
 
 	/**
@@ -466,30 +466,42 @@ class PlayState extends FlxState {
 	 * - get the first 2 and discard the one with the least fitness
 	 * - reproduce the two remaining agents
 	 * 
-	 * @param agents population from which to choose the individuals
+	 * @param _agents population from which to choose the individuals
 	 */
-	function runSelection(_agents:List<AutoEntity>) {
+	function runSelection(_agents:FlxTypedGroup<AutoEntity>) {
+		var agentsPool = _agents.members.filter((a:AutoEntity) -> {
+			a != null;
+		});
+
+		for (agent in agentsPool) {
+			if (!agent.alive || agent.currEnergy < 1) {
+				agentsPool.remove(agent);
+			}
+		}
+
 		var participant1:AutoEntity;
 		do {
-			// get random element from list by getting random num 
-			// between 1 and list length and getting that
-			participant1 = _agents;
+			participant1 = FlxG.random.getObject(agentsPool);
 		} while (participant1 == null);
-		_agents.remove(participant1); // remove chosen participant so it's not considered for reproduction with itself
+		agentsPool.remove(participant1); // remove considered participant so it's not considered for reproduction with itself
 		var participant2:AutoEntity;
 		do {
-			participant2 = _agents.getRandom();
+			participant2 = FlxG.random.getObject(agentsPool);
 		} while (participant2 == null);
-		_agents.remove(participant2);
+		agentsPool.remove(participant2);
 		var participant3:AutoEntity;
 		do {
-			participant3 = _agents.getRandom();
+			participant3 = FlxG.random.getObject(agentsPool);
 		} while (participant3 == null);
-		_agents.remove(participant3);
+		agentsPool.remove(participant3);
 
 		var parent1 = getTournamentWinner(participant1, participant2);
 		var parent2 = participant3;
-		var a = uniformCrossover(parent1.brain.geneticMaterial, parent2.brain.geneticMaterial);
+		
+		chosenListView.dataSource.clear();
+		chosenListView.dataSource.add(parent1.fitnessScore);
+		chosenListView.dataSource.add(parent2.fitnessScore);
+		// var a = uniformCrossover(parent1.brain.geneticMaterial, parent2.brain.geneticMaterial);
 	}
 
 	/**
@@ -537,7 +549,6 @@ class PlayState extends FlxState {
 		agents.add(newAgent); // add to recycling group
 		FlxMouseEventManager.add(newAgent, onAgentClick); // add event listener for mouse clicks
 
-		agentsList.add(newAgent);
 		refreshAgentsListView();
 
 		return newAgent;
@@ -559,23 +570,24 @@ class PlayState extends FlxState {
 	function refreshAgentsListView() {
 		agentsListView.dataSource.allowCallbacks = false; // speeds things up
 		agentsListView.dataSource.clear();
-		for (agent in agentsList) {
-			agentsListView.dataSource.add({
-				name: 'agent ${agentsListView.dataSource.size + 1}',
-				energy: agent.currEnergy,
-				fitness: agent.fitnessScore
-			});
+		for (agent in agents) {
+			if (agent.alive) {
+				agentsListView.dataSource.add({
+					name: 'agent ${agentsListView.dataSource.size + 1}',
+					energy: agent.currEnergy,
+					fitness: agent.fitnessScore
+				});
+			}
 		}
 		agentsListView.dataSource.allowCallbacks = true;
 	}
 }
-
 /**
  * Uniform crossover proof.
  * 
  * Run on try.haxe.org
  */
-class Test {
+/*class Test {
 	static function main() {
 		var _inputLayerSize = 32;
 		var _hiddenLayerSize = 4;
@@ -604,4 +616,4 @@ class Test {
 
 		trace('${geneticMaterial1}\n${geneticMaterial2}\n${uniformOffspring}');
 	}
-}
+}*/

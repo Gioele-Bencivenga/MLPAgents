@@ -79,11 +79,6 @@
 					<label text="chosen" style="font-size: 16px; color: white; filter: outline(#000000, 1);" />
 					<!-- List View-->
 					<listview id="lst_chosen_agents" width="400">
-						<item-renderer layoutName="horizontal" width="100%">
-							<label id="name" width="20%" />
-							<label id="energy" />
-							<label id="fitness" />
-						</item-renderer>
 						<data>
 							<item name="agent1" energy="0" fitness="0" />
 							<item name="agent2" energy="0" fitness="0" />

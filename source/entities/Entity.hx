@@ -150,9 +150,9 @@ class Entity extends FlxSprite {
 		currEnergy = maxEnergy;
 
 		fitnessScore = 0;
-		var ft = new FlxTimer().start(0.1, _ -> {
+		var ft = new FlxTimer().start(1, _ -> {
 			calculateFitness();
-		});
+		}, 0);
 	}
 
 	override function update(elapsed:Float) {
@@ -303,7 +303,9 @@ class Entity extends FlxSprite {
 	}
 
 	function calculateFitness() {
-		fitnessScore += HxFuncs.map(currEnergy, 0, maxEnergy, 0, 1);
+		if (FlxEcho.updates) {
+			fitnessScore += HxFuncs.map(currEnergy, 0, maxEnergy, 0, 1);
+		}
 	}
 
 	function refreshColor() {
