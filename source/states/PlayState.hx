@@ -58,7 +58,12 @@ class PlayState extends FlxState {
 	/**
 	 * Maximum number of agents that can be in the simulation at any time.
 	 */
-	public static inline final MAX_AGENTS:Int = 30;
+	public static inline final MAX_AGENTS:Int = 15;
+
+	/**
+	 * Number of agents we want to spawn in the simulation.
+	 */
+	public static inline final AGENTS_COUNT:Int = 6;
 
 	/**
 	 * Maximum number of agents that can be in the simulation at any time.
@@ -129,7 +134,7 @@ class PlayState extends FlxState {
 	/**
 	 * List containing our agents in the world.
 	 */
-	var agentsList:FlxTypedGroup<AutoEntity>;
+	var agentsArray:Array<AutoEntity>;
 
 	/**
 	 * Automatically sets the value of `FlxEcho.updates`.
@@ -155,7 +160,7 @@ class PlayState extends FlxState {
 			refreshAgentsListView();
 		}, 0);
 
-		var t = new FlxTimer().start(1, function(_) {
+		var t = new FlxTimer().start(2, function(_) {
 			cleanupDeadAgents();
 		}, 0);
 	}
@@ -193,7 +198,7 @@ class PlayState extends FlxState {
 		collidableBodies = new FlxGroup();
 		resources = new FlxTypedGroup<Supply>(MAX_RESOURCES);
 		agents = new FlxTypedGroup<AutoEntity>(MAX_AGENTS);
-		agentsList = new FlxTypedGroup<AutoEntity>(MAX_AGENTS);
+		agentsArray = [for (i in 0...AGENTS_COUNT) null];
 	}
 
 	/**
@@ -270,7 +275,7 @@ class PlayState extends FlxState {
 	function generateCaveTilemap() {
 		// instantiate generator and generate the level
 		var gen = new Generator(70, 110);
-		var levelData:Array<Array<Int>> = gen.generateCave(5);
+		var levelData:Array<Array<Int>> = gen.generateCave(6);
 
 		// reset the groups before filling them again
 		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], agents, resources);
@@ -448,7 +453,7 @@ class PlayState extends FlxState {
 						agent.kill(); // kill previous agent
 						refreshAgentsListView();
 
-						runSelection(agents);
+						//runSelection(agents);
 
 						// reproduction is just random right now
 						var newAgent = createAgent(agX, agY);
@@ -469,40 +474,41 @@ class PlayState extends FlxState {
 	 * @param _agents population from which to choose the individuals
 	 */
 	function runSelection(_agents:FlxTypedGroup<AutoEntity>) {
-		var agentsPool = _agents.members.filter((a:AutoEntity) -> {
-			a != null;
-		});
-
+		//var agentsPool = _agents.members.filter((a:AutoEntity) -> {
+		//	a != null;
+		//});
+		var agentsPool = _agents;
 		for (agent in agentsPool) {
-			if (!agent.alive || agent.currEnergy < 1) {
+			if (agent == null) {
 				agentsPool.remove(agent);
+			} else {
+				if (!agent.alive) {
+					agentsPool.remove(agent);
+				}
 			}
 		}
 
 		var participant1:AutoEntity;
 		do {
-			participant1 = FlxG.random.getObject(agentsPool);
+			participant1 = agentsPool.getRandom();
 		} while (participant1 == null);
-		agentsPool.remove(participant1); // remove considered participant so it's not considered for reproduction with itself
 		var participant2:AutoEntity;
 		do {
-			participant2 = FlxG.random.getObject(agentsPool);
-		} while (participant2 == null);
-		agentsPool.remove(participant2);
+			participant2 = agentsPool.getRandom();
+		} while (participant2 == null || participant2 == participant1);
 		var participant3:AutoEntity;
 		do {
-			participant3 = FlxG.random.getObject(agentsPool);
-		} while (participant3 == null);
-		agentsPool.remove(participant3);
+			participant3 = agentsPool.getRandom();
+		} while (participant3 == null || participant3 == participant1 || participant3 == participant2);
 
 		var parent1 = getTournamentWinner(participant1, participant2);
 		var parent2 = participant3;
-		
-		chosenListView.dataSource.clear();
-		chosenListView.dataSource.add(parent1.fitnessScore);
-		chosenListView.dataSource.add(parent2.fitnessScore);
-		var a = uniformCrossover(parent1.brain.geneticMaterial, parent2.brain.geneticMaterial);
-		chosenListView.dataSource.add(a.length);
+		if (parent1 != null && parent2 != null) {
+			var a = singlePointCrossover(parent1.brain.connections, parent2.brain.connections);
+		} else {
+			trace("A parent was NULL!!");
+		}
+		trace('p1: ${parent1.fitnessScore} p2: ${parent2.fitnessScore}');
 	}
 
 	/**
@@ -519,21 +525,26 @@ class PlayState extends FlxState {
 		return winner;
 	}
 
-	function uniformCrossover(_material1:Array<Float>, _material2:Array<Float>) {
-		var uniformMaterial = [for (i in 0..._material1.length) 0.];
-
-		for (i in 0...uniformMaterial.length) {
-			switch (FlxG.random.bool()) {
-				case true:
-					uniformMaterial[i] = _material1[i];
-				case false:
-					uniformMaterial[i] = _material2[i];
-			}
+	function singlePointCrossover(_material1:Array<Float>, _material2:Array<Float>) {
+		trace('received connections1: ${_material1} of length: ${_material1.length}\n
+		received connections2: ${_material2} of length: ${_material1.length}');
+		// store correct array length in new array
+		var newMaterial = [for (i in 0..._material1.length) 0.];
+		// get random cut point
+		var point = FlxG.random.int(1, newMaterial.length - 1);
+		trace('cut point: ${point}');
+		// cut away the genes on the right of the point, keep the left genes
+		_material1.resize(point);
+		// insert each cut gene in place of the previous gene
+		for (i in 0..._material1.length) {
+			_material2[i] = _material1[i];
 		}
 
-		trace('${_material1}\n${_material2}\n${uniformMaterial}');
+		newMaterial = _material2;
 
-		return uniformMaterial;
+		trace('created new material: ${newMaterial} of length: ${newMaterial.length}');
+
+		return newMaterial;
 	}
 
 	/**
@@ -552,6 +563,7 @@ class PlayState extends FlxState {
 
 		refreshAgentsListView();
 
+		trace('created new agent with brain: ${newAgent.brain.connections} len: ${newAgent.brain.connections.length}');
 		return newAgent;
 	}
 
@@ -584,37 +596,39 @@ class PlayState extends FlxState {
 	}
 }
 /**
- * Uniform crossover proof.
- * 
+ * Single point crossover proof.
  * Run on try.haxe.org
  */
-/*class Test {
+/*
+	class Test {
+	public static inline final CUT_POINT = 9; // change cut point here
+
 	static function main() {
-		var _inputLayerSize = 32;
-		var _hiddenLayerSize = 4;
-		var hiddenLayer = [for (i in 0..._hiddenLayerSize) 0];
+		var m1:Array<Float> = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+		var m2:Array<Float> = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29];
+		var m3 = singlePointCrossover(m1, m2);
+	}
 
-		var _outputLayerSize = 4;
-		var outputLayer = [for (i in 0..._outputLayerSize) 1];
-
-		var weightsCount = (_inputLayerSize * hiddenLayer.length) + (hiddenLayer.length * outputLayer.length);
-		var weights = [for (i in 0...weightsCount) 2];
-
-		var geneticMaterial1 = hiddenLayer.concat(outputLayer);
-		geneticMaterial1 = geneticMaterial1.concat(weights);
-
-		var geneticMaterial2 = [for (i in 0...geneticMaterial1.length) geneticMaterial1[i] + 1];
-		for (i in 0...geneticMaterial2.length) {}
-
-		var uniformOffspring = [for (i in 0...geneticMaterial1.length) 0.];
-		for (i in 0...uniformOffspring.length) {
-			var rand = Std.random(10);
-			if (rand > 5) {
-				uniformOffspring[i] = geneticMaterial2[i];
-			} else
-				uniformOffspring[i] = geneticMaterial1[i];
+	public static function singlePointCrossover(_material1:Array<Float>, _material2:Array<Float>) {
+		trace('m1: ${_material1}');
+		trace('m2: ${_material2}\n');
+		// store correct length in new array
+		var newMaterial = [for (i in 0..._material1.length) 0.];
+		// get random cut point
+		var point = CUT_POINT;
+		// cut away the genes on the right of the point, keep the left genes
+		_material1.resize(point);
+		trace('resize m1: ${_material1}');
+		// insert each cut gene in place of the previous gene
+		for (i in 0..._material1.length) {
+			_material2[i] = _material1[i];
+			trace('push: ${_material2}');
 		}
 
-		trace('${geneticMaterial1}\n${geneticMaterial2}\n${uniformOffspring}');
+		newMaterial = _material2;
+		trace('m3: ${newMaterial}\n');
+
+		return newMaterial;
 	}
-}*/
+	}
+ */

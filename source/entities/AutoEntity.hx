@@ -109,13 +109,9 @@ class AutoEntity extends Entity {
 	var brainInputs:Array<Float>;
 
 	/**
-	 * If this entity has a functioning brain and is alive.
-	 * 
-	 * Flipped to true after creating the brain and to false when energy < 10.
-	 * 
-	 * Being conscious or not influences being considered for reproduction.
+	 * If this entity's brain has been initialized.
 	 */
-	public var isConscious(default, null):Bool = false;
+	public var brainReady(default, null):Bool = false;
 
 	public function new() {
 		super();
@@ -197,8 +193,6 @@ class AutoEntity extends Entity {
 		);
 
 		brainInputs = [for (i in 0...brain.inputLayerSize) 0];
-
-		isConscious = true;
 	}
 
 	override function update(elapsed:Float) {
@@ -296,20 +290,20 @@ class AutoEntity extends Entity {
 
 	function act() {
 		if (brain != null) {
-			// decide how to act based on current inputs
-			var brainOutputs = brain.feedForward(brainInputs);
+			// if the brain has the right amount of connections
+			if (brain.connections.length == brain.connectionsCount) {
+				brainReady = true;
+				// decide how to act based on current inputs
+				var brainOutputs = brain.feedForward(brainInputs);
 
-			// communicate how to act to the body
-			move(brainOutputs[0]);
-			rotate(brainOutputs[1]);
-			controlBite(brainOutputs[2]);
-			controlDash(brainOutputs[3]);
-		}
-
-		if (currEnergy <= 10) {
-			isConscious = false;
+				// communicate how to act to the body
+				move(brainOutputs[0]);
+				rotate(brainOutputs[1]);
+				controlBite(brainOutputs[2]);
+				controlDash(brainOutputs[3]);
+			}
 		} else {
-			isConscious = true;
+			brainReady = false;
 		}
 	}
 
@@ -361,7 +355,7 @@ class AutoEntity extends Entity {
 	}
 
 	override function kill() {
-		isConscious = false;
+		brainReady = false;
 		if (senserTimer != null) {
 			if (senserTimer.active) {
 				senserTimer.cancel();

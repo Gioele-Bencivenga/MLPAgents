@@ -35,31 +35,33 @@ class MLP {
 	public var outputOutputs(default, null):Array<Float>;
 
 	/**
-	 * Array of weights for the connections between neurons.
+	 * Array of connections for the connections between neurons.
 	 */
-	public var weights(default, null):Array<Float>;
+	public var connections(default, null):Array<Float>;
 
 	/**
-	 * Total number of connection weights.
+	 * Total number of connection connections.
 	 *
 	 * Calculated by doing the sum between:
-	 * - number of weights between input and hidden layers: `input neurons * hidden neurons`
-	 * - number of weights between hidden and output layers: `hidden neurons * output neurons`
+	 * - number of connections between input and hidden layers: `input neurons * hidden neurons`
+	 * - number of connections between hidden and output layers: `hidden neurons * output neurons`
 	 */
-	var weightsCount:Int;
-
-	public var geneticMaterial(default, null):Array<Float>;
+	public var connectionsCount(default, null):Int;
 
 	/**
 	 * Creates a new `MLP` instance and initializes each neuron to random values between -1 and 1 inclusive.
 	 * 
-	 * All of the `weights` (connections) between neurons are also randomly generated.
+	 * All of the `connections` (connections) between neurons are also randomly generated.
 	 * 
 	 * @param _inputLayerSize the number of neurons that the `inputLayer` will have
 	 * @param _hiddenLayerSize the number of neurons that the `hiddenLayer` will have
 	 * @param _outputLayerSize the number of neurons that the `outputLayer` will have
 	 */
 	public function new(_inputLayerSize:Int, _hiddenLayerSize:Int, _outputLayerSize:Int) {
+		// calculate number of connection connections between neurons and initialise them with random values
+		connectionsCount = (_inputLayerSize * _hiddenLayerSize) + (_hiddenLayerSize * _outputLayerSize);
+		connections = [for (i in 0...connectionsCount) FlxG.random.float(-1, 1)];
+
 		inputLayerSize = _inputLayerSize;
 		// initialise layers of neurons
 		hiddenLayer = [for (i in 0..._hiddenLayerSize) FlxG.random.float(-1, 1)];
@@ -67,13 +69,6 @@ class MLP {
 		// initialise lists of outputs with 0s
 		hiddenOutputs = [for (i in 0..._hiddenLayerSize) 0];
 		outputOutputs = [for (i in 0..._outputLayerSize) 0];
-
-		// calculate number of connection weights between neurons and initialise them with random values
-		weightsCount = (_inputLayerSize * hiddenLayer.length) + (hiddenLayer.length * outputLayer.length);
-		weights = [for (i in 0...weightsCount) FlxG.random.float(-1, 1)];
-
-		geneticMaterial = hiddenLayer.concat(outputLayer);
-		geneticMaterial = geneticMaterial.concat(weights);
 	}
 
 	/**
@@ -89,12 +84,12 @@ class MLP {
 		// convert inputLayer range from 0..1 to -1..1
 		_inputLayer = [for (input in _inputLayer) HxFuncs.map(input, 0, 1, -1, 1)];
 
-		var wc:Int = 0; // weights counter
+		var cc:Int = 0; // connections counter
 
 		for (i in 0...hiddenLayer.length) {
 			var sum:Float = 0;
 			for (j in 0..._inputLayer.length) {
-				sum += _inputLayer[j] * weights[wc++];
+				sum += _inputLayer[j] * connections[cc++];
 			}
 			hiddenOutputs[i] = HxFuncs.tanh(sum);
 		}
@@ -102,7 +97,7 @@ class MLP {
 		for (i in 0...outputLayer.length) {
 			var sum:Float = 0;
 			for (j in 0...hiddenOutputs.length) {
-				sum += hiddenOutputs[j] * weights[wc++];
+				sum += hiddenOutputs[j] * connections[cc++];
 			}
 			outputOutputs[i] = HxFuncs.tanh(sum);
 		}
@@ -123,11 +118,11 @@ class Test {
 		var _outputLayerSize = 4;
 		var outputLayer = [for (i in 0..._outputLayerSize) "o"];
 
-		var weightsCount = (_inputLayerSize * hiddenLayer.length) + (hiddenLayer.length * outputLayer.length);
-		var weights = [for (i in 0...weightsCount) "w"];
+		var connectionsCount = (_inputLayerSize * hiddenLayer.length) + (hiddenLayer.length * outputLayer.length);
+		var connections = [for (i in 0...connectionsCount) "w"];
 
 		var geneticMaterial = hiddenLayer.concat(outputLayer);
-		geneticMaterial = geneticMaterial.concat(weights);
+		geneticMaterial = geneticMaterial.concat(connections);
 
 		trace(geneticMaterial);
 	}
