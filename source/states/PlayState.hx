@@ -501,7 +501,8 @@ class PlayState extends FlxState {
 		chosenListView.dataSource.clear();
 		chosenListView.dataSource.add(parent1.fitnessScore);
 		chosenListView.dataSource.add(parent2.fitnessScore);
-		// var a = uniformCrossover(parent1.brain.geneticMaterial, parent2.brain.geneticMaterial);
+		var a = uniformCrossover(parent1.brain.geneticMaterial, parent2.brain.geneticMaterial);
+		chosenListView.dataSource.add(a.length);
 	}
 
 	/**
