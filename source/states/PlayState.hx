@@ -453,7 +453,20 @@ class PlayState extends FlxState {
 						agent.kill(); // kill previous agent
 						refreshAgentsListView();
 
-						//runSelection(agents);
+						var array = agents.members.filter((a:AutoEntity) -> {
+							a != null;
+						});
+						for (ag in array) {
+							trace('member: ${ag.fitnessScore}');
+						}
+						var par1 = FlxG.random.getObject(array);
+						trace('part1: ${par1.fitnessScore} len: ${par1.brain.connections.length}');
+						var par2 = FlxG.random.getObject(array);
+						trace('part2: ${par2.fitnessScore} len: ${par2.brain.connections.length}');
+						var par3 = FlxG.random.getObject(array);
+						trace('part3: ${par3.fitnessScore} len: ${par3.brain.connections.length}');
+						trace('winner: ${getTournamentWinner(par1, par2).fitnessScore} len: ${getTournamentWinner(par1, par2).brain.connections.length}');
+						// runSelection(agents);
 
 						// reproduction is just random right now
 						var newAgent = createAgent(agX, agY);
@@ -467,16 +480,13 @@ class PlayState extends FlxState {
 	/**
 	 * Tournament selection.
 	 * 
-	 * - get 3 agents at random from `_agents`
+	 * - get 3 agents at random from our group of agents
 	 * - get the first 2 and discard the one with the least fitness
 	 * - reproduce the two remaining agents
 	 * 
 	 * @param _agents population from which to choose the individuals
 	 */
 	function runSelection(_agents:FlxTypedGroup<AutoEntity>) {
-		//var agentsPool = _agents.members.filter((a:AutoEntity) -> {
-		//	a != null;
-		//});
 		var agentsPool = _agents;
 		for (agent in agentsPool) {
 			if (agent == null) {
@@ -563,7 +573,7 @@ class PlayState extends FlxState {
 
 		refreshAgentsListView();
 
-		trace('created new agent with brain: ${newAgent.brain.connections} len: ${newAgent.brain.connections.length}');
+		trace('created new agent with len: ${newAgent.brain.connections.length}');
 		return newAgent;
 	}
 
