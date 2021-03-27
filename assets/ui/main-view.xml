@@ -49,45 +49,6 @@
 	</hbox>
 
 	<hbox width="100%" height="100%">
-		<hbox width="100%" verticalAlign="bottom">
-			<!--List Container-->
-			<vbox width="100%">
-				<!-- List+Heading Container-->
-				<vbox verticalAlign="bottom" horizontalAlign="left">
-					<!-- List Heading -->
-					<label text="agents" style="font-size: 16px; color: white; filter: outline(#000000, 1);" />
-					<!-- List View-->
-					<listview id="lst_agents" width="400">
-						<item-renderer layoutName="horizontal" width="100%">
-							<label id="name" width="30%" />
-							<label id="energy" />
-							<label id="fitness" />
-						</item-renderer>
-						<data>
-							<item name="agent1" energy="0" fitness="0" />
-							<item name="agent2" energy="0" fitness="0" />
-						</data>
-					</listview>
-				</vbox>
-			</vbox>
-		</hbox>
-		<hbox width="100%" verticalAlign="bottom">
-			<!--List Container-->
-			<vbox width="100%">
-				<!-- List+Heading Container-->
-				<vbox>
-					<!-- List Heading -->
-					<label text="chosen" style="font-size: 16px; color: white; filter: outline(#000000, 1);" />
-					<!-- List View-->
-					<listview id="lst_chosen_agents" width="400">
-						<data>
-							<item name="agent1" energy="0" fitness="0" />
-							<item name="agent2" energy="0" fitness="0" />
-						</data>
-					</listview>
-				</vbox>
-			</vbox>
-		</hbox>
 		<vbox verticalAlign="bottom" horizontalAlign="right">
 			<hbox id="box_version">
 				<label id="lbl_versionH" text="Dev Version: " />

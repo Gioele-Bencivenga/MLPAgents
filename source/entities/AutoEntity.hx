@@ -120,7 +120,7 @@ class AutoEntity extends Entity {
 	/**
 	 * Initialise the Entity by creating sensors, adding body, creating brain ecc..
 	 */
-	override public function init(_x:Float, _y:Float, _width:Int, _height:Int) {
+	override public function init(_x:Float, _y:Float, _width:Int, _height:Int, ?_connections:Array<Float>) {
 		super.init(_x, _y, _width, _height);
 
 		isCamTarget = false;
@@ -190,7 +190,7 @@ class AutoEntity extends Entity {
 			, 2 // thrust and steer outputs
 			+ 1 // bite output
 			+ 1 // dash output
-		);
+			, _connections);
 
 		brainInputs = [for (i in 0...brain.inputLayerSize) 0];
 	}

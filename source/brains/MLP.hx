@@ -57,10 +57,12 @@ class MLP {
 	 * @param _hiddenLayerSize the number of neurons that the `hiddenLayer` will have
 	 * @param _outputLayerSize the number of neurons that the `outputLayer` will have
 	 */
-	public function new(_inputLayerSize:Int, _hiddenLayerSize:Int, _outputLayerSize:Int) {
+	public function new(_inputLayerSize:Int, _hiddenLayerSize:Int, _outputLayerSize:Int, ?_connections:Array<Float>) {
 		// calculate number of connection connections between neurons and initialise them with random values
 		connectionsCount = (_inputLayerSize * _hiddenLayerSize) + (_hiddenLayerSize * _outputLayerSize);
 		connections = [for (i in 0...connectionsCount) FlxG.random.float(-1, 1)];
+		if (_connections != null)
+			connections = _connections;
 
 		inputLayerSize = _inputLayerSize;
 		// initialise layers of neurons
@@ -103,27 +105,5 @@ class MLP {
 		}
 
 		return outputOutputs;
-	}
-}
-
-/**
- * Check to prove genetic material is correctly encoded
- */
-class Test {
-	static function main() {
-		var _inputLayerSize = 32;
-		var _hiddenLayerSize = 4;
-		var hiddenLayer = [for (i in 0..._hiddenLayerSize) "h"];
-
-		var _outputLayerSize = 4;
-		var outputLayer = [for (i in 0..._outputLayerSize) "o"];
-
-		var connectionsCount = (_inputLayerSize * hiddenLayer.length) + (hiddenLayer.length * outputLayer.length);
-		var connections = [for (i in 0...connectionsCount) "w"];
-
-		var geneticMaterial = hiddenLayer.concat(outputLayer);
-		geneticMaterial = geneticMaterial.concat(connections);
-
-		trace(geneticMaterial);
 	}
 }

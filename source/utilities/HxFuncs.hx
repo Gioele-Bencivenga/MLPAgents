@@ -53,4 +53,20 @@ class HxFuncs {
 		var exponent = 2 * _value;
 		return (Math.exp(exponent) - 1.0) / (Math.exp(exponent) + 1.0);
 	}
+
+	public static inline function gaussian(mean:Float, stdDev:Float) {
+		
+
+
+	}
+}
+
+/**
+ * A class that help generating gaussian stuff.
+ */
+class Gaussian{
+	static var spare:Float;
+	static var isSpareReady:Bool;
+
+	public static function getGaussian(mean:Float, stdDev:Float){}
 }

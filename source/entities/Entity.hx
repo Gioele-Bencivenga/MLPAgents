@@ -111,6 +111,11 @@ class Entity extends FlxSprite {
 	 */
 	var canDash:Bool;
 
+	/**
+	 * The amount of energy this entity has ingested.
+	 */
+	var energyEaten:Float;
+
 	public function new() {
 		super();
 	}
@@ -118,7 +123,7 @@ class Entity extends FlxSprite {
 	/**
 	 * Initialise the Entity by adding body, setting color and values.
 	 */
-	public function init(_x:Float, _y:Float, _width:Int, _height:Int) {
+	public function init(_x:Float, _y:Float, _width:Int, _height:Int, ?_connections:Array<Float>) {
 		x = _x;
 		y = _y;
 		makeGraphic(_width, _height, FlxColor.WHITE);
@@ -143,14 +148,15 @@ class Entity extends FlxSprite {
 		}).bodyType = 2; // info used by environment sensors
 		body = this.get_body();
 
+		energyEaten = 0;
 		biteAmount = 0;
-		bite = 10; // FlxG.random.float(5, 10);
-		absorption = 6; // FlxG.random.float(5, 10);
-		maxEnergy = 1000; // FlxG.random.float(500, 1000);
+		bite = 8; // FlxG.random.float(5, 10);
+		absorption = 10; // FlxG.random.float(5, 10);
+		maxEnergy = 500; // FlxG.random.float(500, 1000);
 		currEnergy = maxEnergy;
 
 		fitnessScore = 0;
-		var ft = new FlxTimer().start(1, _ -> {
+		var ft = new FlxTimer().start(0.5, _ -> {
 			calculateFitness();
 		}, 0);
 	}
@@ -222,7 +228,7 @@ class Entity extends FlxSprite {
 	 */
 	public function controlBite(_activation:Float) {
 		if (_activation > 0) {
-			if (useEnergy(_activation * 2)) {
+			if (useEnergy(_activation)) {
 				biteAmount = _activation;
 			} else {
 				biteAmount = 0;
@@ -243,7 +249,7 @@ class Entity extends FlxSprite {
 	public function controlDash(_activation:Float) {
 		if (_activation > 0.5) {
 			if (canDash) {
-				if (useEnergy(150)) { // lots of energy required to dash
+				if (useEnergy(100)) { // lots of energy required to dash
 					body.push(moveRange.end / 1.5, true, VELOCITY);
 					canDash = false;
 
@@ -263,6 +269,8 @@ class Entity extends FlxSprite {
 	 */
 	public function replenishEnergy(_energyAmount:Float):Bool {
 		_energyAmount = Math.abs(_energyAmount);
+		
+		fitnessScore += _energyAmount / 2;
 
 		if (currEnergy <= maxEnergy - _energyAmount) { // if the amount doesn't exceed our max
 			currEnergy += _energyAmount; // increase by the amount
