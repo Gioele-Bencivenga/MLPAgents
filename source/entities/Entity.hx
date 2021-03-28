@@ -21,7 +21,7 @@ class Entity extends FlxSprite {
 	/**
 	 * Maximum rotational velocity that this `Entity`'s physics body can reach.
 	 */
-	public static inline final MAX_ROTATIONAL_VELOCITY = 500;
+	public static inline final MAX_ROTATIONAL_VELOCITY = 450;
 
 	/**
 	 * Default color of entities on the colorwheel.
@@ -133,9 +133,9 @@ class Entity extends FlxSprite {
 		canBeDepleted = true;
 		canDash = true;
 
-		var move = 400; // FlxG.random.float(300, 500);
-		moveRange = new FlxRange<Float>(-move + 150, move);
-		var rot = 400; // FlxG.random.float(200, 400);
+		var move = 200; // FlxG.random.float(300, 500);
+		moveRange = new FlxRange<Float>(-move + 100, move);
+		var rot = MAX_ROTATIONAL_VELOCITY; // FlxG.random.float(200, 400);
 		rotationRange = new FlxRange<Float>(-rot, rot);
 
 		/// BODY
@@ -148,14 +148,14 @@ class Entity extends FlxSprite {
 			mass: 0.3, // FlxG.random.float(0.1, 0.5),
 			drag_length: 400, // FlxG.random.float(300, 500),
 			rotational_drag: 70, // FlxG.random.float(40, 80),
-			max_velocity_length: Entity.MAX_VELOCITY,
-			max_rotational_velocity: Entity.MAX_ROTATIONAL_VELOCITY,
+			max_velocity_length: MAX_VELOCITY,
+			max_rotational_velocity: MAX_ROTATIONAL_VELOCITY,
 		}).bodyType = 2; // info used by environment sensors
 		body = this.get_body();
 
 		energyEaten = 0;
 		biteAmount = 0;
-		bite = 8; // FlxG.random.float(5, 10);
+		bite = 7; // FlxG.random.float(5, 10);
 		absorption = 10; // FlxG.random.float(5, 10);
 		maxEnergy = 500; // FlxG.random.float(500, 1000);
 		currEnergy = maxEnergy;

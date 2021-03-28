@@ -1,5 +1,6 @@
 package states;
 
+import utilities.DebugLine;
 import echo.shape.Circle;
 import echo.Shape;
 import haxe.ds.Vector;
@@ -71,6 +72,11 @@ class PlayState extends FlxState {
 	 * Maximum number of agents that can be in the simulation at any time.
 	 */
 	public static inline final MAX_RESOURCES:Int = 200;
+
+	/**
+	 * Whether we want to draw the sensors for all agents or not.
+	 */
+	public static var DEBUG_SENSORS:Bool = false;
 
 	/**
 	 * Canvas is needed in order to `drawLine()` with `DebugLine`.
@@ -205,6 +211,7 @@ class PlayState extends FlxState {
 		// wire functions to UI buttons
 		uiView.findComponent("mn_gen_cave", MenuItem).onClick = btn_generateCave_onClick;
 		uiView.findComponent("mn_clear_world", MenuItem).onClick = btn_clearWorld_onClick;
+		uiView.findComponent("mn_debug_lines", MenuItem).onClick = btn_drawLines_onClick;
 		uiView.findComponent("mn_link_website", MenuItem).onClick = link_website_onClick;
 		uiView.findComponent("mn_link_github", MenuItem).onClick = link_github_onClick;
 		// agentsListView = uiView.findComponent("lst_agents", ListView);
@@ -224,6 +231,20 @@ class PlayState extends FlxState {
 		// destroy world
 		if (FlxEcho.instance != null)
 			FlxEcho.clear();
+	}
+
+	function btn_drawLines_onClick(_) {
+		if (DEBUG_SENSORS) {
+			DEBUG_SENSORS = false;
+			for (agent in agents) {
+				agent.isCamTarget = false;
+			}
+			DebugLine.clearCanvas();
+		} else {
+			DEBUG_SENSORS = true;
+			if (simCam.target != null)
+				cast(simCam.target, AutoEntity).isCamTarget = true;
+		}
 	}
 
 	function link_website_onClick(_) {
@@ -261,7 +282,7 @@ class PlayState extends FlxState {
 	function generateCaveTilemap() {
 		// instantiate generator and generate the level
 		var gen = new Generator(70, 110);
-		var levelData:Array<Array<Int>> = gen.generateCave(8);
+		var levelData:Array<Array<Int>> = gen.generateCave(15, 0.10, 2, 2, 3);
 
 		// reset the groups before filling them again
 		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], agents, resources);
@@ -307,12 +328,6 @@ class PlayState extends FlxState {
 		canvas.cameras = [simCam];
 		add(canvas);
 
-		// snap camera to click
-		FlxMouseEventManager.add(canvas, function(_) {
-			simCam.follow(null);
-			simCam.focusOn(FlxG.mouse.getPosition());
-		});
-
 		/// ENTITIES
 		for (j in 0...levelData.length) { // step through level data and add entities
 			for (i in 0...levelData[j].length) {
@@ -335,7 +350,7 @@ class PlayState extends FlxState {
 						switch (body2.bodyType) {
 							case 1: // we hit a wall
 								var ent = cast(body1.get_object(), AutoEntity);
-								ent.deplete(10);
+								ent.deplete(50);
 							case any:
 								// do nothing
 						}
@@ -350,8 +365,6 @@ class PlayState extends FlxState {
 					case 2: // we are an entity
 						var ent = cast(body1.get_object(), AutoEntity);
 						switch (body2.bodyType) {
-							case 1:
-								ent.deplete(20);
 							case 2: // we hit an entity
 								if (ent.biteAmount > 0) { // we are trying to bite
 									var hitEnt = cast(body2.get_object(), AutoEntity);
@@ -421,7 +434,8 @@ class PlayState extends FlxState {
 			cast(simCam.target, AutoEntity).isCamTarget = false;
 
 		simCam.follow(_target, 0.2);
-		cast(_target, AutoEntity).isCamTarget = true;
+		if (DEBUG_SENSORS)
+			cast(_target, AutoEntity).isCamTarget = true;
 	}
 
 	/**
@@ -462,6 +476,7 @@ class PlayState extends FlxState {
 	 */
 	function cleanupDeadAgents() {
 		if (FlxEcho.updates) {
+			var newAgent:AutoEntity = null;
 			for (agent in agents) {
 				if (agent.alive && agent.exists) {
 					if (agent.currEnergy <= 1) {
@@ -499,7 +514,7 @@ class PlayState extends FlxState {
 						// trace('crossed brain: ${parent2.brain.connections} len: ${parent2.brain.connections.length}');
 
 						// gaussian mutation
-						var mutatedBrain = [for (i in 0...parent2.brain.connections.length) FlxG.random.floatNormal(0, 0.08)];
+						var mutatedBrain = [for (i in 0...parent2.brain.connections.length) FlxG.random.floatNormal(0, 0.06)];
 						for (i in 0...mutatedBrain.length) {
 							mutatedBrain[i] = mutatedBrain[i] + parent2.brain.connections[i];
 							if (mutatedBrain[i] > 1)
@@ -509,13 +524,18 @@ class PlayState extends FlxState {
 						}
 						// trace('mutant brain: ${mutatedBrain} len: ${mutatedBrain.length}');
 
-						var newAgent = createAgent(agX, agY, mutatedBrain);
+						newAgent = createAgent(agX, agY, mutatedBrain);
 						// trace('child brain: ${newAgent.brain.connections} len: ${newAgent.brain.connections.length}');
-						if (resources.countLiving() < MAX_RESOURCES) {
+						if (resources.countLiving() < MAX_RESOURCES - 1) {
+							createResource(agX, agY);
 							createResource(agX, agY);
 						}
 					}
 				}
+			}
+
+			if (simCam.target.alive == false) {
+				setCameraTargetAgent(newAgent);
 			}
 		}
 	}
@@ -548,8 +568,6 @@ class PlayState extends FlxState {
 		agents.add(newAgent); // add to recycling group
 		FlxMouseEventManager.add(newAgent, onAgentClick); // add event listener for mouse clicks
 
-		// refreshAgentsListView();
-
 		// trace('created new agent with len: ${newAgent.brain.connections.length}');
 		return newAgent;
 	}
@@ -566,23 +584,6 @@ class PlayState extends FlxState {
 		newRes.add_to_group(entitiesCollGroup); // add to bodies that should collide
 		resources.add(newRes); // add to recycling group
 	}
-
-	/*
-		function refreshAgentsListView() {
-			agentsListView.dataSource.allowCallbacks = false; // speeds things up
-			agentsListView.dataSource.clear();
-			for (agent in agents) {
-				if (agent.alive) {
-					agentsListView.dataSource.add({
-						name: 'agent ${agentsListView.dataSource.size + 1}',
-						energy: agent.currEnergy,
-						fitness: agent.fitnessScore
-					});
-				}
-			}
-			agentsListView.dataSource.allowCallbacks = true;
-		}
-	 */
 }
 /**
  * Single point crossover proof.

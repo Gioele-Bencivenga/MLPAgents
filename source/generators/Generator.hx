@@ -122,8 +122,7 @@ class Generator {
 	 * @param _aliveChance the probability that a cell will start out alive
 	 * @param _deathLimit the minimum number of neighbours needed kill a cell
 	 * @param _birthLimit the minimum number of neighbours needed to make a cell alive
-	 * @param _overcrowdLimit = 6 the maximum number of neighbours that a cell can have without dying
-	 * @param _stepNumber = 50 the default number of steps of simulation we run - generally the higher the smoother
+	 * @param _stepNumber the default number of steps of simulation we run - generally the higher the smoother
 	 * @param ?_levelWidth if specified overrides the width that was given to the `Generator` on creation
 	 * @param ?_levelHeight if specified overrides the height that was given to the `Generator` on creation
 	 * @return a matrix of `Int`s that's hopefully similar in shape to a cave

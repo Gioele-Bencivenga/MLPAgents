@@ -29,16 +29,17 @@ class AutoEntity extends Entity {
 	public static inline final SENSORS_COUNT:Int = 6;
 
 	/**
-	 * Each sensor activates 5 input neurons: 
+	 * Each sensor can activate up to 5 input neurons: 
 	 * - distanceToWall `0..1` distance to wall hit by sensor
 	 * - distanceToEntity `0..1` distance to entity hit by sensor
 	 * - distanceToResource `0..1` distance to resource hit by sensor
+	 * 
 	 * - entityEnergy `0..1` the amount of energy of the hit entity (if any)
 	 * - supplyAmount `0..1` the amount of the hit resource (if any)
 	 * 
 	 * Shorter distance = higher activation and vice versa.
 	 */
-	public static inline final SENSORS_INPUTS:Int = SENSORS_COUNT * 5;
+	public static inline final SENSORS_INPUTS:Int = SENSORS_COUNT * 3; // *5 when you want to get amount
 
 	/**
 	 * How often the sensors are cast.
@@ -123,9 +124,7 @@ class AutoEntity extends Entity {
 	override public function init(_x:Float, _y:Float, _width:Int, _height:Int, ?_connections:Array<Float>) {
 		super.init(_x, _y, _width, _height);
 
-		isCamTarget = false;
-
-		var rot = 100.; // FlxG.random.float(20, 150);
+		var rot = 120.; // FlxG.random.float(20, 150);
 		possibleRotations = new FlxRange(-rot, rot);
 
 		sensorsRotations = [
@@ -182,6 +181,9 @@ class AutoEntity extends Entity {
 		senserTimer.start(sensorRefreshRate, (_) -> sense(), 0);
 
 		brain = new MLP(SENSORS_INPUTS // number of input neurons dedicated to sensors
+			+ 1 // own x velocity neuron
+			+ 1 // own y velocity neuron
+			+ 1 // own rotation speed neuron 
 			+ 1 // own energy level neuron
 			+ 1 // bias neuron that's always firing 1
 			// hidden layer
@@ -200,108 +202,6 @@ class AutoEntity extends Entity {
 			super.update(elapsed);
 
 			act();
-		}
-	}
-
-	/**
-	 * Get information about the environment from the sensors.
-	 * 
-	 * Called periodically by the `senserTimer`.
-	 */
-	function sense() {
-		if (FlxEcho.updates) {
-			if (useEnergy(0.05)) { // sensing costs 0.05 energy
-				var sensorInputs = [for (i in 0...SENSORS_INPUTS) 0.];
-				// we need an array of bodies for the linecast
-				var bodiesArray:Array<Body> = [
-					for (i in 0...PlayState.collidableBodies.get_group_bodies().length)
-						if (PlayState.collidableBodies.get_group_bodies()[i].shapes != null) {
-							PlayState.collidableBodies.get_group_bodies()[i];
-						} else {
-							trace('there was null body in the group!');
-							var b = new Body({shape: {type: CIRCLE}});
-							b;
-						}
-				];
-
-				if (isCamTarget)
-					DebugLine.clearCanvas(); // clear previously drawn lines
-
-				for (i in 0...sensors.length) { // do this for each sensor
-					sensors[i] = Line.get(); // init the sensor
-					// create a vector to subtract from the body's position in order to to gain a relative offset
-					var relOffset = Vector2.fromPolar(MathUtil.degToRad(body.rotation + sensorsRotations[i]),
-						SENSORS_DISTANCE); // radius is distance from body
-
-					var sensorPos = body.get_position()
-						.addWith(relOffset); // this body's pos added with the offset will give us a sensor starting position out of the body
-
-					// set the actual sensors position,rotation, and length
-					sensors[i].set_from_vector(sensorPos, body.rotation + sensorsRotations[i], sensorsLengths[i]);
-					// cast the line, returning the first intersection
-					var hit:Intersection = null;
-					try {
-						hit = sensors[i].linecast(bodiesArray);
-					} catch (e) {
-						trace(e.details());
-						for (body in bodiesArray) {
-							trace('array body ${body.id}, shapes ${body.shapes}');
-						}
-					}
-					if (hit != null) { // if we hit something
-						sensorInputs[i] = hit.body.bodyType; // put it in the array
-						var lineColor = FlxColor.RED;
-						switch (hit.body.bodyType) {
-							case 1: // hit a wall
-								lineColor = FlxColor.WHITE;
-								sensorInputs[i] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToWall neuron
-							case 2: // hit an agent
-								lineColor = FlxColor.ORANGE;
-								sensorInputs[i + 1] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToEntity neuron
-								var agent = cast(hit.body.get_object(), AutoEntity);
-								sensorInputs[i + 3] = HxFuncs.map(agent.currEnergy, 0, agent.maxEnergy, 0,
-									1); // put agent's energy amount in entityEnergy neuron
-							case 3: // hit a resource
-								lineColor = FlxColor.MAGENTA;
-								sensorInputs[i + 2] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToResource neuron
-								var supp = cast(hit.body.get_object(), Supply);
-								sensorInputs[i + 4] = HxFuncs.map(supp.currAmount, 0, Supply.MAX_START_AMOUNT, 0,
-									1); // put supply's amount in supplyAmount neuron
-							case unknown: // hit unknown
-								lineColor = FlxColor.BROWN;
-								sensorInputs[i] = 0;
-								sensorInputs[i + 1] = 0;
-								sensorInputs[i + 2] = 0;
-								sensorInputs[i + 3] = 0;
-								sensorInputs[i + 4] = 0;
-						}
-						if (isCamTarget)
-							DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y, lineColor, 2);
-					} else { // if we didn't hit anything
-						// reflect it in the array
-						sensorInputs[i] = 0;
-						sensorInputs[i + 1] = 0;
-						sensorInputs[i + 2] = 0;
-						sensorInputs[i + 3] = 0;
-						sensorInputs[i + 4] = 0;
-
-						if (isCamTarget)
-							DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y);
-					}
-					sensors[i].put(); // put the linecast
-				}
-				// put mapped sensor inputs into array of inputs
-				brainInputs = [
-					for (input in sensorInputs)
-						HxFuncs.map(input, 0, 3, 0, 1)
-				];
-
-				// add input neuron for current energy level
-				brainInputs = brainInputs.concat([HxFuncs.map(currEnergy, 0, maxEnergy, 0, 1)]);
-
-				// add bias neuron at the end
-				brainInputs = brainInputs.concat([1]);
-			}
 		}
 	}
 
@@ -325,6 +225,108 @@ class AutoEntity extends Entity {
 	}
 
 	/**
+	 * Get information about the environment from the sensors.
+	 * 
+	 * Called periodically by the `senserTimer`.
+	 */
+	function sense() {
+		if (FlxEcho.updates) {
+			if (useEnergy(0.05)) { // sensing costs 0.05 energy
+				var sensorInputs = [for (i in 0...SENSORS_INPUTS) 0.];
+				// we need an array of bodies for the linecast
+				var bodiesArray:Array<Body> = [
+					for (i in 0...PlayState.collidableBodies.get_group_bodies().length)
+						if (PlayState.collidableBodies.get_group_bodies()[i].shapes != null) {
+							PlayState.collidableBodies.get_group_bodies()[i];
+						}
+				];
+
+				if (isCamTarget)
+					DebugLine.clearCanvas(); // clear previously drawn lines
+
+				for (i in 0...sensors.length) { // do this for each sensor
+					sensors[i] = Line.get(); // init the sensor
+					// create a vector to subtract from the body's position in order to to gain a relative offset
+					var relOffset = Vector2.fromPolar(MathUtil.degToRad(body.rotation + sensorsRotations[i]),
+						SENSORS_DISTANCE); // radius is distance from body
+
+					var sensorPos = body.get_position()
+						.addWith(relOffset); // this body's pos added with the offset will give us a sensor starting position out of the body
+
+					// set the actual sensors position,rotation, and length
+					sensors[i].set_from_vector(sensorPos, body.rotation + sensorsRotations[i], sensorsLengths[i]);
+					// cast the line, returning the first intersection
+					var hit:Intersection = null;
+					// try {
+					hit = sensors[i].linecast(bodiesArray);
+					// }
+					if (hit != null) { // if we hit something
+						sensorInputs[i] = hit.body.bodyType; // put it in the array
+						var lineColor = FlxColor.RED;
+						switch (hit.body.bodyType) {
+							case 1: // hit a wall
+								lineColor = FlxColor.WHITE;
+								sensorInputs[i] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToWall neuron
+							case 2: // hit an agent
+								lineColor = FlxColor.ORANGE;
+								sensorInputs[i + 1] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToEntity neuron
+							// var agent = cast(hit.body.get_object(), AutoEntity);
+							// sensorInputs[i + 3] = HxFuncs.map(agent.currEnergy, 0, agent.maxEnergy, 0,
+							//	1); // put agent's energy amount in entityEnergy neuron
+							case 3: // hit a resource
+								lineColor = FlxColor.MAGENTA;
+								sensorInputs[i + 2] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToResource neuron
+							// var supp = cast(hit.body.get_object(), Supply);
+							// sensorInputs[i + 4] = HxFuncs.map(supp.currAmount, 0, Supply.MAX_START_AMOUNT, 0,
+							//	1); // put supply's amount in supplyAmount neuron
+							case unknown: // hit unknown
+								lineColor = FlxColor.BROWN;
+								sensorInputs[i] = 0;
+								sensorInputs[i + 1] = 0;
+								sensorInputs[i + 2] = 0;
+								// sensorInputs[i + 3] = 0;
+								// sensorInputs[i + 4] = 0;
+						}
+						if (isCamTarget)
+							DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y, lineColor, 2);
+					} else { // if we didn't hit anything
+						// reflect it in the array
+						sensorInputs[i] = 0;
+						sensorInputs[i + 1] = 0;
+						sensorInputs[i + 2] = 0;
+						// sensorInputs[i + 3] = 0;
+						// sensorInputs[i + 4] = 0;
+
+						if (isCamTarget)
+							DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y);
+					}
+					sensors[i].put(); // put the linecast
+				}
+				// put mapped sensor inputs into array of inputs
+				brainInputs = [
+					for (input in sensorInputs)
+						HxFuncs.map(input, 0, 3, 0, 1)
+				];
+
+				// add input neurons for current velocity
+				brainInputs = brainInputs.concat([HxFuncs.map(body.velocity.x, -body.max_velocity_length, body.max_velocity_length, 0, 1)]);
+				brainInputs = brainInputs.concat([HxFuncs.map(body.velocity.y, -body.max_velocity_length, body.max_velocity_length, 0, 1)]);
+
+				// add input neuron for current rotational velocity
+				brainInputs = brainInputs.concat([
+					HxFuncs.map(body.rotational_velocity, rotationRange.start, rotationRange.end, 0, 1)
+				]);
+
+				// add input neuron for current energy level
+				brainInputs = brainInputs.concat([HxFuncs.map(currEnergy, 0, maxEnergy, 0, 1)]);
+
+				// add bias neuron at the end
+				brainInputs = brainInputs.concat([1]);
+			}
+		}
+	}
+
+	/**
 	 * Returns the distance to the intersection in a range of `1` to `0`. 
 	 * 
 	 * Meaning that if the intersection happens furthest from the sensor a value close to `0` will be returned, 
@@ -337,7 +339,8 @@ class AutoEntity extends Entity {
 	 * @return the intersection's distance as represented by a value in a range of `1` to `0`
 	 */
 	function invDistanceTo(_inters:Intersection, _maxDistance:Float):Float {
-		return HxFuncs.map(_inters.closest.distance, 0, _maxDistance, 1, 0);
+		var dist = HxFuncs.map(_inters.closest.distance, 0, _maxDistance, 1, 0);
+		return dist;
 	}
 
 	/**

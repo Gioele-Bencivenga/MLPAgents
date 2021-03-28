@@ -119,15 +119,13 @@ class Supply extends FlxSprite {
 	}
 
 	/**
-	 * Sets the `width` and `height` of the object according to its `currAmount`. 
-	 * 
-	 * Flips `canBeDepleted` back to `true` when done.
+	 * Sets the `width` and `height` of the object according to its `currAmount`.
 	 */
 	function refreshSize() {
-		body.scale_x = HxFuncs.map(currAmount, 0, startAmount, 0.2, 1);
-		body.scale_y = HxFuncs.map(currAmount, 0, startAmount, 0.2, 1);
-		scale.x = HxFuncs.map(currAmount, 0, startAmount, 0.2, 1);
-		scale.y = HxFuncs.map(currAmount, 0, startAmount, 0.2, 1);
+		body.scale_x = HxFuncs.map(currAmount, 0, startAmount, 0.5, 1);
+		body.scale_y = HxFuncs.map(currAmount, 0, startAmount, 0.5, 1);
+		scale.x = HxFuncs.map(currAmount, 0, startAmount, 0.5, 1);
+		scale.y = HxFuncs.map(currAmount, 0, startAmount, 0.5, 1);
 	}
 
 	/**

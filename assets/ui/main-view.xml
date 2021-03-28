@@ -29,6 +29,9 @@
 			<menuitem id="mn_clear_world" text="Clear World" />
 			<menuseparator />
 		</menu>
+		<menu text="Agents">
+			<menuitem id="mn_debug_lines" text="Toggle Sensors" tooltip="Toggle the drawing of the sensors debug lines" />
+		</menu>
 		<menu text="About">
 			<menuitem id="mn_link_website" text="My Website" icon="assets/icons/icon_website.png" />
 			<menuitem id="mn_link_github" text="Code on GitHub" icon="assets/icons/icon_github.png" />
