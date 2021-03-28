@@ -71,6 +71,11 @@ class Supply extends FlxSprite {
 		color = newCol;
 
 		this.add_body({
+			shape: {
+				type: RECT,
+				width: currAmount,
+				height: currAmount
+			},
 			mass: HxFuncs.map(currAmount, 0, MAX_START_AMOUNT, 0, 0.6),
 			drag_length: 200,
 			rotational_drag: 60

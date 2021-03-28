@@ -185,7 +185,7 @@ class AutoEntity extends Entity {
 			+ 1 // own energy level neuron
 			+ 1 // bias neuron that's always firing 1
 			// hidden layer
-			, 4 // arbitrary number
+			, 10 // arbitrary number
 			// output layer
 			, 2 // thrust and steer outputs
 			+ 1 // bite output
@@ -213,7 +213,16 @@ class AutoEntity extends Entity {
 			if (useEnergy(0.05)) { // sensing costs 0.05 energy
 				var sensorInputs = [for (i in 0...SENSORS_INPUTS) 0.];
 				// we need an array of bodies for the linecast
-				var bodiesArray:Array<Body> = PlayState.collidableBodies.get_group_bodies();
+				var bodiesArray:Array<Body> = [
+					for (i in 0...PlayState.collidableBodies.get_group_bodies().length)
+						if (PlayState.collidableBodies.get_group_bodies()[i].shapes != null) {
+							PlayState.collidableBodies.get_group_bodies()[i];
+						} else {
+							trace('there was null body in the group!');
+							var b = new Body({shape: {type: CIRCLE}});
+							b;
+						}
+				];
 
 				if (isCamTarget)
 					DebugLine.clearCanvas(); // clear previously drawn lines
@@ -229,8 +238,16 @@ class AutoEntity extends Entity {
 
 					// set the actual sensors position,rotation, and length
 					sensors[i].set_from_vector(sensorPos, body.rotation + sensorsRotations[i], sensorsLengths[i]);
-					// cast the line, returning all intersections
-					var hit = sensors[i].linecast(bodiesArray);
+					// cast the line, returning the first intersection
+					var hit:Intersection = null;
+					try {
+						hit = sensors[i].linecast(bodiesArray);
+					} catch (e) {
+						trace(e.details());
+						for (body in bodiesArray) {
+							trace('array body ${body.id}, shapes ${body.shapes}');
+						}
+					}
 					if (hit != null) { // if we hit something
 						sensorInputs[i] = hit.body.bodyType; // put it in the array
 						var lineColor = FlxColor.RED;

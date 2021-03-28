@@ -1,5 +1,7 @@
 package states;
 
+import echo.shape.Circle;
+import echo.Shape;
 import haxe.ds.Vector;
 import haxe.ds.List;
 import haxe.ui.containers.ListView;
@@ -274,6 +276,7 @@ class PlayState extends FlxState {
 		});
 		FlxEcho.reset_acceleration = true;
 		FlxEcho.updates = simUpdates; // if the sim is paused pause the world too
+		FlxEcho.instance.world.iterations = 1;
 
 		// generate physics bodies for our Tilemap from the levelData - making sure to ignore any tile with the index 2 or 3 so we can create objects out of them later
 		var tiles = TileMap.generate(levelData.flatten2DArray(), TILE_SIZE, TILE_SIZE, levelData[0].length, levelData.length, 0, 0, 1, null, [2, 3]);
@@ -282,8 +285,15 @@ class PlayState extends FlxState {
 			var wallTile = new Tile(bounds.min_x, bounds.min_y, bounds.width.floor(), bounds.height.floor(), FlxColor.fromRGB(230, 240, 245));
 			bounds.put(); // put() the bounds so that they can be reused later. this can really help with memory management
 			// wallTile.set_body(tile); // SHOULD attach the generated body to the FlxObject, doesn't seem to work at the moment so using add_body instead
-			wallTile.add_body().bodyType = 1; // sensors understand 1 = wall, 2 = entity, 3 = resource...
+			wallTile.add_body({
+				shape: {
+					type: RECT,
+					width: wallTile.width,
+					height: wallTile.height
+				}
+			});
 			wallTile.get_body().mass = 0; // tiles are immovable
+			wallTile.get_body().bodyType = 1; // sensors understand 1 = wall, 2 = entity, 3 = resource...
 			wallTile.add_to_group(terrainCollGroup); // Instead of `group.add(object)` we use `object.add_to_group(group)`
 			wallTile.add_to_group(collidableBodies);
 		}
@@ -296,6 +306,12 @@ class PlayState extends FlxState {
 		canvas.makeGraphic(Std.int(FlxEcho.instance.world.width), Std.int(FlxEcho.instance.world.height), FlxColor.TRANSPARENT, true);
 		canvas.cameras = [simCam];
 		add(canvas);
+
+		// snap camera to click
+		FlxMouseEventManager.add(canvas, function(_) {
+			simCam.follow(null);
+			simCam.focusOn(FlxG.mouse.getPosition());
+		});
 
 		/// ENTITIES
 		for (j in 0...levelData.length) { // step through level data and add entities
@@ -312,30 +328,48 @@ class PlayState extends FlxState {
 		}
 
 		/// COLLISIONS
-		entitiesCollGroup.listen(terrainCollGroup);
+		entitiesCollGroup.listen(terrainCollGroup, {
+			stay: (body1, body2, collData) -> {
+				switch (body1.bodyType) {
+					case 2: // we are an entity
+						switch (body2.bodyType) {
+							case 1: // we hit a wall
+								var ent = cast(body1.get_object(), AutoEntity);
+								ent.deplete(10);
+							case any:
+								// do nothing
+						}
+					case any:
+						// do nothing
+				}
+			}
+		});
 		entitiesCollGroup.listen(entitiesCollGroup, {
 			stay: (body1, body2, collData) -> {
 				switch (body1.bodyType) {
 					case 2: // we are an entity
 						var ent = cast(body1.get_object(), AutoEntity);
-						if (ent.biteAmount > 0) { // we are trying to bite
-							switch (body2.bodyType) {
-								case 2: // we hit an entity
+						switch (body2.bodyType) {
+							case 1:
+								ent.deplete(20);
+							case 2: // we hit an entity
+								if (ent.biteAmount > 0) { // we are trying to bite
 									var hitEnt = cast(body2.get_object(), AutoEntity);
 									var chunk = hitEnt.deplete((ent.bite * (ent.biteAmount * 2)));
 									ent.replenishEnergy(chunk * ent.absorption);
-
 									if (hitEnt.biteAmount > 0) { // other entity is biting too
 										var ourChunk = ent.deplete((hitEnt.bite * (hitEnt.biteAmount * 2)));
 										hitEnt.replenishEnergy(ourChunk * hitEnt.absorption);
 									}
-								case 3: // we hit a resource
+								}
+							case 3: // we hit a resource
+								if (ent.biteAmount > 0) { // we are trying to bite
 									var res = cast(body2.get_object(), Supply); // grasp the resource
 									var chunk = res.deplete(ent.bite * (ent.biteAmount * 2)); // bite a chunk out of it
 									ent.replenishEnergy(chunk * ent.absorption); // eat it
-								case any: // we hit anything else
-									// do nothing
-							}
+								}
+							case any: // we hit anything else
+								// do nothing
 						}
 					case 3: // we are a resource
 						switch (body2.bodyType) {
@@ -344,6 +378,7 @@ class PlayState extends FlxState {
 								if (ent.biteAmount > 0) { // entity is biting
 									var res = cast(body1.get_object(), Supply);
 									var chunk = res.deplete(ent.bite * (ent.biteAmount * 2));
+
 									ent.replenishEnergy(chunk * ent.absorption);
 								}
 							case any: // we hit anything else
@@ -354,7 +389,6 @@ class PlayState extends FlxState {
 				}
 			}
 		});
-
 		setCameraTargetAgent(agents.getFirstAlive());
 	}
 
@@ -477,8 +511,9 @@ class PlayState extends FlxState {
 
 						var newAgent = createAgent(agX, agY, mutatedBrain);
 						// trace('child brain: ${newAgent.brain.connections} len: ${newAgent.brain.connections.length}');
-						createResource(agX, agY);
-						createResource(agX, agY);
+						if (resources.countLiving() < MAX_RESOURCES) {
+							createResource(agX, agY);
+						}
 					}
 				}
 			}
@@ -552,8 +587,7 @@ class PlayState extends FlxState {
 /**
  * Single point crossover proof.
  * Run on try.haxe.org
- */
-/*
+ */ /*
 	class Test {
 	public static inline final CUT_POINT = 9; // change cut point here
 

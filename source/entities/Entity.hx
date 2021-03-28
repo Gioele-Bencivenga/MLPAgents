@@ -134,12 +134,17 @@ class Entity extends FlxSprite {
 		canDash = true;
 
 		var move = 400; // FlxG.random.float(300, 500);
-		moveRange = new FlxRange<Float>(-move, move);
+		moveRange = new FlxRange<Float>(-move + 150, move);
 		var rot = 400; // FlxG.random.float(200, 400);
 		rotationRange = new FlxRange<Float>(-rot, rot);
 
 		/// BODY
 		this.add_body({
+			shape: {
+				type: RECT,
+				width: _width,
+				height: _height
+			},
 			mass: 0.3, // FlxG.random.float(0.1, 0.5),
 			drag_length: 400, // FlxG.random.float(300, 500),
 			rotational_drag: 70, // FlxG.random.float(40, 80),
@@ -269,7 +274,7 @@ class Entity extends FlxSprite {
 	 */
 	public function replenishEnergy(_energyAmount:Float):Bool {
 		_energyAmount = Math.abs(_energyAmount);
-		
+
 		fitnessScore += _energyAmount / 2;
 
 		if (currEnergy <= maxEnergy - _energyAmount) { // if the amount doesn't exceed our max
