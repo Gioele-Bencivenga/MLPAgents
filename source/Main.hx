@@ -2,7 +2,7 @@ package;
 
 import flixel.util.FlxColor;
 import flixel.FlxG;
-import states.PlayState;
+import PlayState;
 import flixel.FlxGame;
 import openfl.display.Sprite;
 

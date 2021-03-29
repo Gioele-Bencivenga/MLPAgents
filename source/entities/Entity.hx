@@ -1,6 +1,6 @@
 package entities;
 
-import states.PlayState;
+import PlayState;
 import flixel.util.FlxTimer;
 import flixel.tweens.FlxTween;
 import flixel.util.FlxColor;
@@ -21,7 +21,7 @@ class Entity extends FlxSprite {
 	/**
 	 * Maximum rotational velocity that this `Entity`'s physics body can reach.
 	 */
-	public static inline final MAX_ROTATIONAL_VELOCITY = 450;
+	public static inline final MAX_ROTATIONAL_VELOCITY = 400;
 
 	/**
 	 * Default color of entities on the colorwheel.
@@ -157,7 +157,7 @@ class Entity extends FlxSprite {
 		biteAmount = 0;
 		bite = 7; // FlxG.random.float(5, 10);
 		absorption = 10; // FlxG.random.float(5, 10);
-		maxEnergy = 500; // FlxG.random.float(500, 1000);
+		maxEnergy = 600; // FlxG.random.float(500, 1000);
 		currEnergy = maxEnergy;
 
 		fitnessScore = 0;
@@ -207,6 +207,7 @@ class Entity extends FlxSprite {
 		if (useEnergy(_moveAmount)) { // if the energy is successfully expended
 			var mappedMoveAmt = HxFuncs.map(_moveAmount, -1, 1, moveRange.start, moveRange.end);
 
+			// move not relative to rotation?
 			body.push(mappedMoveAmt, true);
 		}
 	}
@@ -317,7 +318,7 @@ class Entity extends FlxSprite {
 
 	function calculateFitness() {
 		if (FlxEcho.updates) {
-			fitnessScore += HxFuncs.map(currEnergy, 0, maxEnergy, 0, 1);
+			fitnessScore += HxFuncs.map(currEnergy, 0, maxEnergy, 0, 0.4);
 		}
 	}
 

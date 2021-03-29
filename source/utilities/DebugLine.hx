@@ -1,6 +1,6 @@
 package utilities;
 
-import states.PlayState;
+import PlayState;
 import flixel.util.FlxColor;
 import flixel.FlxSprite;
 

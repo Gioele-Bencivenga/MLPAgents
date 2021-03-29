@@ -87,7 +87,7 @@ class Generator {
 	 * @param _chance the chance of filling each tile in `%`. chance is applied to every `0` tile
 	 * @return the modified `_levelData` now containing some `3`s
 	 */
-	function placeResources(_levelData:Array<Array<Int>>, _chance:Int = 2):Array<Array<Int>> {
+	function placeResources(_levelData:Array<Array<Int>>, _chance:Float = 0.8):Array<Array<Int>> {
 		for (x in 0...levelWidth) {
 			for (y in 0...levelHeight) {
 				if (_levelData[x][y] == 0) { // empty tile

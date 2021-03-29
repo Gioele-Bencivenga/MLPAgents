@@ -1,4 +1,4 @@
-package states;
+package ;
 
 import utilities.DebugLine;
 import echo.shape.Circle;
@@ -133,6 +133,13 @@ class PlayState extends FlxState {
 	var simUpdates(default, set):Bool = true;
 
 	/**
+	 * Array containing the fitness values of deceased entities over time.
+	 * 
+	 * Used to export values for further analysis.
+	 */
+	var fitnessData:Array<Float>;
+
+	/**
 	 * Automatically sets the value of `FlxEcho.updates`.
 	 * @param newVal the new value `FlxEcho.updates` and `simUpdates`
 	 */
@@ -156,6 +163,8 @@ class PlayState extends FlxState {
 		var t = new FlxTimer().start(1, function(_) {
 			cleanupDeadAgents();
 		}, 0);
+
+		fitnessData = [0];
 	}
 
 	function setupCameras() {
@@ -212,10 +221,9 @@ class PlayState extends FlxState {
 		uiView.findComponent("mn_gen_cave", MenuItem).onClick = btn_generateCave_onClick;
 		uiView.findComponent("mn_clear_world", MenuItem).onClick = btn_clearWorld_onClick;
 		uiView.findComponent("mn_debug_lines", MenuItem).onClick = btn_drawLines_onClick;
+		uiView.findComponent("mn_save_agents", MenuItem).onClick = btn_saveAgents_onClick;
 		uiView.findComponent("mn_link_website", MenuItem).onClick = link_website_onClick;
 		uiView.findComponent("mn_link_github", MenuItem).onClick = link_github_onClick;
-		// agentsListView = uiView.findComponent("lst_agents", ListView);
-		// chosenListView = uiView.findComponent("lst_chosen_agents", ListView);
 		uiView.findComponent("btn_play_pause", Button).onClick = btn_play_pause_onClick;
 		uiView.findComponent("btn_target", Button).onClick = btn_target_onClick;
 		uiView.findComponent("sld_zoom", Slider).onChange = sld_zoom_onChange;
@@ -245,6 +253,17 @@ class PlayState extends FlxState {
 			if (simCam.target != null)
 				cast(simCam.target, AutoEntity).isCamTarget = true;
 		}
+	}
+
+	function btn_saveAgents_onClick(_) {
+		#if sys
+		var filePath = new haxe.io.Path('assets/data/fitnessData.txt'); // making a cross-platform path
+		try {
+			sys.io.File.saveContent(haxe.io.Path.join([filePath.dir, filePath.file]), fitnessData.join(","));
+		} catch (e) {
+			trace(e.details());
+		}
+		#end
 	}
 
 	function link_website_onClick(_) {
@@ -350,7 +369,7 @@ class PlayState extends FlxState {
 						switch (body2.bodyType) {
 							case 1: // we hit a wall
 								var ent = cast(body1.get_object(), AutoEntity);
-								ent.deplete(50);
+								ent.deplete(100);
 							case any:
 								// do nothing
 						}
@@ -482,7 +501,8 @@ class PlayState extends FlxState {
 					if (agent.currEnergy <= 1) {
 						var agX = agent.body.x;
 						var agY = agent.body.y;
-						trace('fitness: ${agent.fitnessScore}');
+						trace('fit: ${agent.fitnessScore}');
+						fitnessData.safePush(agent.fitnessScore);
 						agent.kill(); // kill previous agent
 
 						var array = agents.members.filter((a:AutoEntity) -> {

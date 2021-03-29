@@ -60,13 +60,3 @@ class HxFuncs {
 
 	}
 }
-
-/**
- * A class that help generating gaussian stuff.
- */
-class Gaussian{
-	static var spare:Float;
-	static var isSpareReady:Bool;
-
-	public static function getGaussian(mean:Float, stdDev:Float){}
-}

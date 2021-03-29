@@ -1,6 +1,6 @@
 package supplies;
 
-import states.PlayState;
+import PlayState;
 import flixel.util.FlxTimer;
 import flixel.util.FlxColor;
 import flixel.math.FlxPoint;

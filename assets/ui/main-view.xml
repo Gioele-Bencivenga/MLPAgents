@@ -31,6 +31,7 @@
 		</menu>
 		<menu text="Agents">
 			<menuitem id="mn_debug_lines" text="Toggle Sensors" tooltip="Toggle the drawing of the sensors debug lines" />
+			<menuitem id="mn_save_agents" text="Save Population" tooltip="Writes down to a file various information about the current agents population" />
 		</menu>
 		<menu text="About">
 			<menuitem id="mn_link_website" text="My Website" icon="assets/icons/icon_website.png" />

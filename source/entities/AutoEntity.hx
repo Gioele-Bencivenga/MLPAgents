@@ -14,7 +14,7 @@ import utilities.DebugLine;
 import flixel.util.FlxTimer;
 import echo.Body;
 import echo.Line;
-import states.PlayState;
+import PlayState;
 import utilities.HxFuncs;
 
 using echo.FlxEcho;
@@ -124,7 +124,7 @@ class AutoEntity extends Entity {
 	override public function init(_x:Float, _y:Float, _width:Int, _height:Int, ?_connections:Array<Float>) {
 		super.init(_x, _y, _width, _height);
 
-		var rot = 120.; // FlxG.random.float(20, 150);
+		var rot = 160.; // FlxG.random.float(20, 150);
 		possibleRotations = new FlxRange(-rot, rot);
 
 		sensorsRotations = [
@@ -183,7 +183,7 @@ class AutoEntity extends Entity {
 		brain = new MLP(SENSORS_INPUTS // number of input neurons dedicated to sensors
 			+ 1 // own x velocity neuron
 			+ 1 // own y velocity neuron
-			+ 1 // own rotation speed neuron 
+			+ 1 // own rotation speed neuron
 			+ 1 // own energy level neuron
 			+ 1 // bias neuron that's always firing 1
 			// hidden layer
@@ -266,7 +266,8 @@ class AutoEntity extends Entity {
 						switch (hit.body.bodyType) {
 							case 1: // hit a wall
 								lineColor = FlxColor.WHITE;
-								sensorInputs[i] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToWall neuron
+								// sensorInputs[i] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToWall neuron
+								sensorInputs[i] = HxFuncs.map(hit.closest.distance, 0, sensorsLengths[i], 0, 1); // maybe this will suggest them to stay away from the wall?
 							case 2: // hit an agent
 								lineColor = FlxColor.ORANGE;
 								sensorInputs[i + 1] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToEntity neuron
@@ -309,8 +310,12 @@ class AutoEntity extends Entity {
 				];
 
 				// add input neurons for current velocity
-				brainInputs = brainInputs.concat([HxFuncs.map(body.velocity.x, -body.max_velocity_length, body.max_velocity_length, 0, 1)]);
-				brainInputs = brainInputs.concat([HxFuncs.map(body.velocity.y, -body.max_velocity_length, body.max_velocity_length, 0, 1)]);
+				brainInputs = brainInputs.concat([
+					HxFuncs.map(body.velocity.x, -body.max_velocity_length, body.max_velocity_length, 0, 1)
+				]);
+				brainInputs = brainInputs.concat([
+					HxFuncs.map(body.velocity.y, -body.max_velocity_length, body.max_velocity_length, 0, 1)
+				]);
 
 				// add input neuron for current rotational velocity
 				brainInputs = brainInputs.concat([
