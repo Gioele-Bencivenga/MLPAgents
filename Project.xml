@@ -3,7 +3,7 @@
 	<!-- _________________________ Application Settings _________________________ -->
 
 	<!-- This var's value can be accessed from code using `var vers = haxe.macro.Compiler.getDefine("PROJECT_VERSION");`-->
-	<set name="PROJECT_VERSION" value="0.0.3" />
+	<set name="PROJECT_VERSION" value="0.0.5" />
 	<haxedef name="PROJECT_VERSION" value="${PROJECT_VERSION}" />
 
 	<app title="MLPAgents" file="MLPAgents" main="Main" version="${GAME_VERSION}" company="Gioele Bencivenga" package="com.haxeflixel.MLPAgents" />
@@ -24,7 +24,7 @@
 	<window if="html5" resizable="true" />
 
 	<!--Desktop-specific-->
-	<window if="desktop" orientation="landscape" fullscreen="true" resizable="true" />
+	<window if="desktop" orientation="landscape" fullscreen="false" resizable="true" />
 
 	<!--Mobile-specific-->
 	<window if="mobile" orientation="portrait" fullscreen="true" width="0" height="0" />
