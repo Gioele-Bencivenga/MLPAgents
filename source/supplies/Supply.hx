@@ -20,7 +20,7 @@ class Supply extends FlxSprite {
 	/**
 	 * Maximum amount that any resource can start from when created.
 	 */
-	public static inline final MAX_START_AMOUNT = 40;
+	public static inline final MAX_START_AMOUNT = 60;
 
 	/**
 	 * This supply's body.
@@ -56,7 +56,7 @@ class Supply extends FlxSprite {
 	/**
 	 * Initializes the resource.
 	 */
-	public function init(_x:Float, _y:Float, _minStartAmt:Int = 15, _maxStartAmt:Int = MAX_START_AMOUNT) {
+	public function init(_x:Float, _y:Float, _minStartAmt:Int = 20, _maxStartAmt:Int = MAX_START_AMOUNT) {
 		x = _x;
 		y = _y;
 

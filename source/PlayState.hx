@@ -1,5 +1,7 @@
-package ;
+package;
 
+import echo.Body;
+import echo.Line;
 import utilities.DebugLine;
 import echo.shape.Circle;
 import echo.Shape;
@@ -311,6 +313,8 @@ class PlayState extends FlxState {
 			FlxEcho.clear();
 		// create world before adding any physics objects
 		FlxEcho.init({
+			x: 0,
+			y: 0,
 			width: levelData[0].length * TILE_SIZE, // Make the size of your Echo world equal the size of your play field
 			height: levelData.length * TILE_SIZE,
 		});
@@ -502,7 +506,7 @@ class PlayState extends FlxState {
 						var agX = agent.body.x;
 						var agY = agent.body.y;
 						trace('fit: ${agent.fitnessScore}');
-						fitnessData.safePush(agent.fitnessScore);
+						fitnessData.push(agent.fitnessScore);
 						agent.kill(); // kill previous agent
 
 						var array = agents.members.filter((a:AutoEntity) -> {
@@ -544,11 +548,16 @@ class PlayState extends FlxState {
 						}
 						// trace('mutant brain: ${mutatedBrain} len: ${mutatedBrain.length}');
 
-						newAgent = createAgent(agX, agY, mutatedBrain);
+						var newAgentPos = getEmptySpace();
+						newAgent = createAgent(newAgentPos.x, newAgentPos.y, mutatedBrain);
 						// trace('child brain: ${newAgent.brain.connections} len: ${newAgent.brain.connections.length}');
-						if (resources.countLiving() < MAX_RESOURCES - 1) {
-							createResource(agX, agY);
-							createResource(agX, agY);
+
+						var resourceAmt = 3;
+						if (resources.countLiving() < MAX_RESOURCES - resourceAmt) {
+							for (i in 0...resourceAmt) {
+								var newResPos = getEmptySpace();
+								createResource(newResPos.x, newResPos.y);
+							}
 						}
 					}
 				}
@@ -603,6 +612,47 @@ class PlayState extends FlxState {
 		newRes.add_to_group(collidableBodies); // add to bodies visible by sensors
 		newRes.add_to_group(entitiesCollGroup); // add to bodies that should collide
 		resources.add(newRes); // add to recycling group
+	}
+
+	/**
+	 * Gets a random position in the world and checks it for bodies.
+	 * 
+	 * If no bodies are found the position is returned.
+	 */
+	function getEmptySpace(_lineLength:Float = 80, _lineAmt:Int = 20) {
+		var foundEmptySpace = false;
+		var emptyPosition = new Vector2(50, 50);
+		do {
+			// we need an array of bodies for the linecast, sometimes its shape will be null and an exception will be thrown
+			var bodiesArray:Array<Body> = [
+				for (i in 0...collidableBodies.get_group_bodies().length)
+					if (collidableBodies.get_group_bodies()[i].shapes != null) {
+						collidableBodies.get_group_bodies()[i];
+					}
+			];
+
+			emptyPosition.set(FlxG.random.float(FlxEcho.instance.world.x + 100, FlxEcho.instance.world.width),
+				FlxG.random.float(FlxEcho.instance.world.y + 100, FlxEcho.instance.world.height));
+
+			var hitBody:Bool = false;
+			var line = Line.get();
+			for (i in 0..._lineAmt) {
+				line.set_from_vector(emptyPosition, 360 * (i / _lineAmt), _lineLength);
+				var result = line.linecast(bodiesArray);
+				if (result != null) {
+					hitBody = true;
+				}
+				line.put();
+			}
+
+			if (hitBody == true) {
+				foundEmptySpace = false;
+			} else {
+				foundEmptySpace = true;
+			}
+		} while (foundEmptySpace == false);
+
+		return emptyPosition;
 	}
 }
 /**
