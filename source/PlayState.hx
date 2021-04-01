@@ -63,17 +63,17 @@ class PlayState extends FlxState {
 	/**
 	 * Maximum number of agents that can be in the simulation at any time.
 	 */
-	public static inline final MAX_AGENTS:Int = 21;
+	public static inline final MAX_AGENTS:Int = 35;
 
 	/**
 	 * Number of agents we want to spawn in the simulation.
 	 */
-	public static inline final AGENTS_COUNT:Int = 6;
+	public static inline final AGENTS_COUNT:Int = 33;
 
 	/**
 	 * Maximum number of agents that can be in the simulation at any time.
 	 */
-	public static inline final MAX_RESOURCES:Int = 200;
+	public static inline final MAX_RESOURCES:Int = 100;
 
 	/**
 	 * Whether we want to draw the sensors for all agents or not.
@@ -259,9 +259,9 @@ class PlayState extends FlxState {
 
 	function btn_saveAgents_onClick(_) {
 		#if sys
-		var filePath = new haxe.io.Path('assets/data/fitnessData.txt'); // making a cross-platform path
+		var filePath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/fitnessData.txt";
 		try {
-			sys.io.File.saveContent(haxe.io.Path.join([filePath.dir, filePath.file]), fitnessData.join(","));
+			sys.io.File.saveContent(filePath, fitnessData.join("\n"));
 		} catch (e) {
 			trace(e.details());
 		}
@@ -303,7 +303,7 @@ class PlayState extends FlxState {
 	function generateCaveTilemap() {
 		// instantiate generator and generate the level
 		var gen = new Generator(70, 110);
-		var levelData:Array<Array<Int>> = gen.generateCave(15, 0.10, 2, 2, 3);
+		var levelData:Array<Array<Int>> = gen.generateCave(AGENTS_COUNT, 0.09, 2, 2, 2);
 
 		// reset the groups before filling them again
 		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], agents, resources);
@@ -505,7 +505,7 @@ class PlayState extends FlxState {
 					if (agent.currEnergy <= 1) {
 						var agX = agent.body.x;
 						var agY = agent.body.y;
-						trace('fit: ${agent.fitnessScore}');
+						// trace('fit: ${agent.fitnessScore}');
 						fitnessData.push(agent.fitnessScore);
 						agent.kill(); // kill previous agent
 
@@ -538,7 +538,7 @@ class PlayState extends FlxState {
 						// trace('crossed brain: ${parent2.brain.connections} len: ${parent2.brain.connections.length}');
 
 						// gaussian mutation
-						var mutatedBrain = [for (i in 0...parent2.brain.connections.length) FlxG.random.floatNormal(0, 0.06)];
+						var mutatedBrain = [for (i in 0...parent2.brain.connections.length) FlxG.random.floatNormal(0, 0.05)];
 						for (i in 0...mutatedBrain.length) {
 							mutatedBrain[i] = mutatedBrain[i] + parent2.brain.connections[i];
 							if (mutatedBrain[i] > 1)
@@ -553,7 +553,7 @@ class PlayState extends FlxState {
 						// trace('child brain: ${newAgent.brain.connections} len: ${newAgent.brain.connections.length}');
 
 						var resourceAmt = 3;
-						if (resources.countLiving() < MAX_RESOURCES - resourceAmt) {
+						if (resources.countLiving() <= 55) {
 							for (i in 0...resourceAmt) {
 								var newResPos = getEmptySpace();
 								createResource(newResPos.x, newResPos.y);
@@ -631,8 +631,8 @@ class PlayState extends FlxState {
 					}
 			];
 
-			emptyPosition.set(FlxG.random.float(FlxEcho.instance.world.x + 100, FlxEcho.instance.world.width),
-				FlxG.random.float(FlxEcho.instance.world.y + 100, FlxEcho.instance.world.height));
+			emptyPosition.set(FlxG.random.float(FlxEcho.instance.world.x + 100, FlxEcho.instance.world.width - 100),
+				FlxG.random.float(FlxEcho.instance.world.y + 100, FlxEcho.instance.world.height - 100));
 
 			var hitBody:Bool = false;
 			var line = Line.get();

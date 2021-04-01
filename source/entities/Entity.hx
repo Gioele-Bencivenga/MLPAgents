@@ -1,5 +1,6 @@
 package entities;
 
+import echo.data.Types.ForceType;
 import PlayState;
 import flixel.util.FlxTimer;
 import flixel.tweens.FlxTween;
@@ -133,8 +134,8 @@ class Entity extends FlxSprite {
 		canBeDepleted = true;
 		canDash = true;
 
-		var move = 200; // FlxG.random.float(300, 500);
-		moveRange = new FlxRange<Float>(-move + 100, move);
+		var move = 150; // FlxG.random.float(300, 500);
+		moveRange = new FlxRange<Float>(0, move);
 		var rot = MAX_ROTATIONAL_VELOCITY; // FlxG.random.float(200, 400);
 		rotationRange = new FlxRange<Float>(-rot, rot);
 
@@ -146,7 +147,7 @@ class Entity extends FlxSprite {
 				height: _height
 			},
 			mass: 0.3, // FlxG.random.float(0.1, 0.5),
-			drag_length: 400, // FlxG.random.float(300, 500),
+			drag_length: 300, // FlxG.random.float(300, 500),
 			rotational_drag: 70, // FlxG.random.float(40, 80),
 			max_velocity_length: MAX_VELOCITY,
 			max_rotational_velocity: MAX_ROTATIONAL_VELOCITY,
@@ -256,7 +257,7 @@ class Entity extends FlxSprite {
 		if (_activation > 0.5) {
 			if (canDash) {
 				if (useEnergy(100)) { // lots of energy required to dash
-					body.push(moveRange.end / 1.5, true, VELOCITY);
+					body.push(moveRange.end * 1.5, true, VELOCITY);
 					canDash = false;
 
 					var t = new FlxTimer().start(0.3, function(_) {

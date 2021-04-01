@@ -83,9 +83,6 @@ class MLP {
 	 * @return the array of outputs produced by the network, each output ranging from -1 to 1 inclusive
 	 */
 	public function feedForward(_inputLayer:Array<Float>):Array<Float> {
-		// convert inputLayer range from 0..1 to -1..1
-		_inputLayer = [for (input in _inputLayer) HxFuncs.map(input, 0, 1, -1, 1)];
-
 		var cc:Int = 0; // connections counter
 
 		for (i in 0...hiddenLayer.length) {
@@ -103,6 +100,9 @@ class MLP {
 			}
 			outputOutputs[i] = HxFuncs.tanh(sum);
 		}
+
+		// convert outputLayer range from 0..1 to -1..1
+		outputOutputs = [for (input in _inputLayer) HxFuncs.map(input, 0, 1, -1, 1)];
 
 		return outputOutputs;
 	}

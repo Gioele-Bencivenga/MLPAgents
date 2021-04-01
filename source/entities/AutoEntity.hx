@@ -124,7 +124,7 @@ class AutoEntity extends Entity {
 	override public function init(_x:Float, _y:Float, _width:Int, _height:Int, ?_connections:Array<Float>) {
 		super.init(_x, _y, _width, _height);
 
-		var rot = 160.; // FlxG.random.float(20, 150);
+		var rot = 140.; // FlxG.random.float(20, 150);
 		possibleRotations = new FlxRange(-rot, rot);
 
 		sensorsRotations = [
@@ -182,7 +182,8 @@ class AutoEntity extends Entity {
 
 		brain = new MLP(SENSORS_INPUTS // number of input neurons dedicated to sensors
 			+ 1 // own x velocity neuron
-			+ 1 // own y velocity neuron
+			//+ 1 // own y velocity neuron
+			+ 1 // own rotation angle neuron
 			+ 1 // own rotation speed neuron
 			+ 1 // own energy level neuron
 			+ 1 // bias neuron that's always firing 1
@@ -191,7 +192,7 @@ class AutoEntity extends Entity {
 			// output layer
 			, 2 // thrust and steer outputs
 			+ 1 // bite output
-			+ 1 // dash output
+			//+ 1 // dash output
 			, _connections);
 
 		brainInputs = [for (i in 0...brain.inputLayerSize) 0];
@@ -217,7 +218,7 @@ class AutoEntity extends Entity {
 				move(brainOutputs[0]);
 				rotate(brainOutputs[1]);
 				controlBite(brainOutputs[2]);
-				controlDash(brainOutputs[3]);
+				//controlDash(brainOutputs[3]);
 			}
 		} else {
 			brainReady = false;
@@ -267,7 +268,8 @@ class AutoEntity extends Entity {
 							case 1: // hit a wall
 								lineColor = FlxColor.WHITE;
 								// sensorInputs[i] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToWall neuron
-								sensorInputs[i] = HxFuncs.map(hit.closest.distance, 0, sensorsLengths[i], 0, 1); // maybe this will suggest them to stay away from the wall?
+								sensorInputs[i] = HxFuncs.map(hit.closest.distance, 0, sensorsLengths[i], 0,
+									1); // maybe this will suggest them to stay away from the wall?
 							case 2: // hit an agent
 								lineColor = FlxColor.ORANGE;
 								sensorInputs[i + 1] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToEntity neuron
@@ -311,10 +313,17 @@ class AutoEntity extends Entity {
 
 				// add input neurons for current velocity
 				brainInputs = brainInputs.concat([
-					HxFuncs.map(body.velocity.x, -body.max_velocity_length, body.max_velocity_length, 0, 1)
+					HxFuncs.map(body.velocity.length, 0, body.max_velocity_length, 0, 1)
 				]);
+				//brainInputs = brainInputs.concat([
+				//	HxFuncs.map(body.velocity.y, -body.max_velocity_length, body.max_velocity_length, 0, 1)
+				//]);
+
+				// wrap rotation between 0 and 360 (otherwise rotation keeps winding up on while spinning)
+				var rot = FlxMath.wrap(Std.int(body.rotation), 0, 360);
+				// add input neuron for current rotation angle
 				brainInputs = brainInputs.concat([
-					HxFuncs.map(body.velocity.y, -body.max_velocity_length, body.max_velocity_length, 0, 1)
+					HxFuncs.map(rot, 0, 360, 0, 1)
 				]);
 
 				// add input neuron for current rotational velocity
