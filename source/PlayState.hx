@@ -63,12 +63,12 @@ class PlayState extends FlxState {
 	/**
 	 * Maximum number of agents that can be in the simulation at any time.
 	 */
-	public static inline final MAX_AGENTS:Int = 35;
+	public static inline final MAX_AGENTS:Int = 26;
 
 	/**
 	 * Number of agents we want to spawn in the simulation.
 	 */
-	public static inline final AGENTS_COUNT:Int = 33;
+	public static inline final AGENTS_COUNT:Int = 25;
 
 	/**
 	 * Maximum number of agents that can be in the simulation at any time.
@@ -512,14 +512,15 @@ class PlayState extends FlxState {
 						var array = agents.members.filter((a:AutoEntity) -> {
 							a != null;
 						});
-						var par1 = FlxG.random.getObject(array);
+						var competitors:Array<AutoEntity> = [for (i in 0...4) null];
+						competitors[0] = FlxG.random.getObject(array);
 						// trace('part1: ${par1.fitnessScore} len: ${par1.brain.connections.length}');
-						var par2:AutoEntity = FlxG.random.getObject(array);
-						while (par2 == par1) { // need to be 2 different competitors
-							par2 = FlxG.random.getObject(array);
+						competitors[1] = FlxG.random.getObject(array);
+						while (competitors[1] == competitors[0]) { // need to be 2 different competitors
+							competitors[1] = FlxG.random.getObject(array);
 						}
 						// trace('part2: ${par2.fitnessScore} len: ${par2.brain.connections.length}');
-						var winner = getTournamentWinner(par1, par2);
+						var winner = getTournamentWinner(competitors[0], competitors[1]);
 						// trace('winner: ${winner.fitnessScore} len: ${winner.brain.connections.length}');
 
 						var parent1 = winner;
