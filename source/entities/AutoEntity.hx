@@ -34,12 +34,14 @@ class AutoEntity extends Entity {
 	 * - distanceToEntity `0..1` distance to entity hit by sensor
 	 * - distanceToResource `0..1` distance to resource hit by sensor
 	 * 
+	 * Shorter distance = higher activation and vice versa.
+	 * 
 	 * - entityEnergy `0..1` the amount of energy of the hit entity (if any)
 	 * - supplyAmount `0..1` the amount of the hit resource (if any)
 	 * 
-	 * Shorter distance = higher activation and vice versa.
+	 * Higher amount = higher activation and vice versa.
 	 */
-	public static inline final SENSORS_INPUTS:Int = SENSORS_COUNT * 3; // *5 when you want to get amount
+	public static inline final SENSORS_INPUTS:Int = SENSORS_COUNT * 5;
 
 	/**
 	 * How often the sensors are cast.
@@ -124,7 +126,7 @@ class AutoEntity extends Entity {
 	override public function init(_x:Float, _y:Float, _width:Int, _height:Int, ?_connections:Array<Float>) {
 		super.init(_x, _y, _width, _height);
 
-		var rot = 140.; // FlxG.random.float(20, 150);
+		var rot = 145.; // FlxG.random.float(20, 150);
 		possibleRotations = new FlxRange(-rot, rot);
 
 		sensorsRotations = [
@@ -149,9 +151,9 @@ class AutoEntity extends Entity {
 		];
 
 		var lengthVals = [
-			130, // FlxG.random.float(90, 200),
-			150, // FlxG.random.float(90, 200),
-			165 // FlxG.random.float(90, 200)
+			160, // FlxG.random.float(90, 200),
+			170, // FlxG.random.float(90, 200),
+			180 // FlxG.random.float(90, 200)
 		];
 		sensorsLengths = [
 			for (i in 0...SENSORS_COUNT) {
@@ -182,7 +184,7 @@ class AutoEntity extends Entity {
 
 		brain = new MLP(SENSORS_INPUTS // number of input neurons dedicated to sensors
 			+ 1 // own x velocity neuron
-			//+ 1 // own y velocity neuron
+			// + 1 // own y velocity neuron
 			+ 1 // own rotation angle neuron
 			+ 1 // own rotation speed neuron
 			+ 1 // own energy level neuron
@@ -192,7 +194,7 @@ class AutoEntity extends Entity {
 			// output layer
 			, 2 // thrust and steer outputs
 			+ 1 // bite output
-			//+ 1 // dash output
+			+ 1 // dash output
 			, _connections);
 
 		brainInputs = [for (i in 0...brain.inputLayerSize) 0];
@@ -218,7 +220,7 @@ class AutoEntity extends Entity {
 				move(brainOutputs[0]);
 				rotate(brainOutputs[1]);
 				controlBite(brainOutputs[2]);
-				//controlDash(brainOutputs[3]);
+				controlDash(brainOutputs[3]);
 			}
 		} else {
 			brainReady = false;
@@ -273,22 +275,22 @@ class AutoEntity extends Entity {
 							case 2: // hit an agent
 								lineColor = FlxColor.ORANGE;
 								sensorInputs[i + 1] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToEntity neuron
-							// var agent = cast(hit.body.get_object(), AutoEntity);
-							// sensorInputs[i + 3] = HxFuncs.map(agent.currEnergy, 0, agent.maxEnergy, 0,
-							//	1); // put agent's energy amount in entityEnergy neuron
+								var agent = cast(hit.body.get_object(), AutoEntity);
+								sensorInputs[i + 3] = HxFuncs.map(agent.currEnergy, 0, agent.maxEnergy, 0,
+									1); // put agent's energy amount in entityEnergy neuron
 							case 3: // hit a resource
 								lineColor = FlxColor.MAGENTA;
 								sensorInputs[i + 2] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToResource neuron
-							// var supp = cast(hit.body.get_object(), Supply);
-							// sensorInputs[i + 4] = HxFuncs.map(supp.currAmount, 0, Supply.MAX_START_AMOUNT, 0,
-							//	1); // put supply's amount in supplyAmount neuron
+								var supp = cast(hit.body.get_object(), Supply);
+								sensorInputs[i + 4] = HxFuncs.map(supp.currAmount, 0, Supply.MAX_START_AMOUNT, 0,
+									1); // put supply's amount in supplyAmount neuron
 							case unknown: // hit unknown
 								lineColor = FlxColor.BROWN;
 								sensorInputs[i] = 0;
 								sensorInputs[i + 1] = 0;
 								sensorInputs[i + 2] = 0;
-								// sensorInputs[i + 3] = 0;
-								// sensorInputs[i + 4] = 0;
+								sensorInputs[i + 3] = 0;
+								sensorInputs[i + 4] = 0;
 						}
 						if (isCamTarget)
 							DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y, lineColor, 2);
@@ -297,8 +299,8 @@ class AutoEntity extends Entity {
 						sensorInputs[i] = 0;
 						sensorInputs[i + 1] = 0;
 						sensorInputs[i + 2] = 0;
-						// sensorInputs[i + 3] = 0;
-						// sensorInputs[i + 4] = 0;
+						sensorInputs[i + 3] = 0;
+						sensorInputs[i + 4] = 0;
 
 						if (isCamTarget)
 							DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y);
@@ -312,19 +314,15 @@ class AutoEntity extends Entity {
 				];
 
 				// add input neurons for current velocity
-				brainInputs = brainInputs.concat([
-					HxFuncs.map(body.velocity.length, 0, body.max_velocity_length, 0, 1)
-				]);
-				//brainInputs = brainInputs.concat([
+				brainInputs = brainInputs.concat([HxFuncs.map(body.velocity.length, 0, body.max_velocity_length, 0, 1)]);
+				// brainInputs = brainInputs.concat([
 				//	HxFuncs.map(body.velocity.y, -body.max_velocity_length, body.max_velocity_length, 0, 1)
-				//]);
+				// ]);
 
 				// wrap rotation between 0 and 360 (otherwise rotation keeps winding up on while spinning)
 				var rot = FlxMath.wrap(Std.int(body.rotation), 0, 360);
 				// add input neuron for current rotation angle
-				brainInputs = brainInputs.concat([
-					HxFuncs.map(rot, 0, 360, 0, 1)
-				]);
+				brainInputs = brainInputs.concat([HxFuncs.map(rot, 0, 360, 0, 1)]);
 
 				// add input neuron for current rotational velocity
 				brainInputs = brainInputs.concat([
