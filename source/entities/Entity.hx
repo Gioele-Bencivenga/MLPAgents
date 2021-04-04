@@ -135,7 +135,7 @@ class Entity extends FlxSprite {
 		canDash = true;
 
 		var move = 150; // FlxG.random.float(300, 500);
-		moveRange = new FlxRange<Float>(0, move);
+		moveRange = new FlxRange<Float>(-move / 2, move);
 		var rot = MAX_ROTATIONAL_VELOCITY; // FlxG.random.float(200, 400);
 		rotationRange = new FlxRange<Float>(-rot, rot);
 
@@ -257,7 +257,7 @@ class Entity extends FlxSprite {
 		if (_activation > 0.5) {
 			if (canDash) {
 				if (useEnergy(100)) { // lots of energy required to dash
-					body.push(moveRange.end * 1.5, true, VELOCITY);
+					body.push(moveRange.end, true, VELOCITY);
 					canDash = false;
 
 					var t = new FlxTimer().start(0.3, function(_) {
