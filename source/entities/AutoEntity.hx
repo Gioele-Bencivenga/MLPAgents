@@ -319,17 +319,16 @@ class AutoEntity extends Entity {
 				//	HxFuncs.map(body.velocity.y, -body.max_velocity_length, body.max_velocity_length, 0, 1)
 				// ]);
 
-				// wrap rotation between 0 and 360 (otherwise rotation keeps winding up on while spinning)
-				var rot = FlxMath.wrap(Std.int(body.rotation), 0, 360);
-				// add input neuron for current rotation angle
-				brainInputs = brainInputs.concat([HxFuncs.map(rot, 0, 360, 0, 1)]);
+				// add input neuron for current rotation angle,
+				// wrap rotation between 0 and 360 (otherwise rotation keeps winding up while spinning)
+				brainInputs = brainInputs.concat([FlxMath.wrap(Std.int(body.rotation), 0, 1)]);
 
 				// add input neuron for current rotational velocity
-				brainInputs = brainInputs.concat([
-					HxFuncs.map(body.rotational_velocity, rotationRange.start, rotationRange.end, 0, 1)
-				]);
+				// activation decreases as absolute velocity increases
+				brainInputs = brainInputs.concat([HxFuncs.map(Math.abs(body.rotational_velocity), 0, rotationRange.end, 1, 0)]);
 
 				// add input neuron for current energy level
+				// activation increases the closer we are to maxEnergy
 				brainInputs = brainInputs.concat([HxFuncs.map(currEnergy, 0, maxEnergy, 0, 1)]);
 
 				// add bias neuron at the end

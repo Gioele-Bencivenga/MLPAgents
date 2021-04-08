@@ -258,6 +258,10 @@ class PlayState extends FlxState {
 	}
 
 	function btn_saveAgents_onClick(_) {
+		savePopulation();
+	}
+
+	function savePopulation() {
 		#if sys
 		var filePath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/fitnessData.txt";
 		try {
@@ -509,21 +513,24 @@ class PlayState extends FlxState {
 						fitnessData.push(agent.fitnessScore);
 						agent.kill(); // kill previous agent
 
+						// get an array of our agents
 						var array = agents.members.filter((a:AutoEntity) -> {
-							a != null;
+							a != null; // filter out null agents
 						});
-						var competitors:Array<AutoEntity> = [for (i in 0...4) null];
-						competitors[0] = FlxG.random.getObject(array);
-						// trace('part1: ${par1.fitnessScore} len: ${par1.brain.connections.length}');
-						competitors[1] = FlxG.random.getObject(array);
-						while (competitors[1] == competitors[0]) { // need to be 2 different competitors
-							competitors[1] = FlxG.random.getObject(array);
+						// create competitor group and fill it with random competitors
+						var competitors1:Array<AutoEntity> = [for (i in 0...7) null];
+						for (i in 0...competitors1.length) {
+							switch (i) {
+								case 0:
+									competitors1[i] = FlxG.random.getObject(array);
+								case anyOtherValue:
+									do { // make sure competitors are unique
+										competitors1[i] = FlxG.random.getObject(array);
+									} while (competitors1[i] == competitors1[i - 1]);
+							}
 						}
-						// trace('part2: ${par2.fitnessScore} len: ${par2.brain.connections.length}');
-						var winner = getTournamentWinner(competitors[0], competitors[1]);
-						// trace('winner: ${winner.fitnessScore} len: ${winner.brain.connections.length}');
-
-						var parent1 = winner;
+						var winner1 = getTournamentWinner(competitors1);
+						var parent1 = winner1;
 						var parent2 = FlxG.random.getObject(array);
 						while (parent2 == parent1) {
 							parent2 = FlxG.random.getObject(array);
@@ -567,20 +574,27 @@ class PlayState extends FlxState {
 			if (simCam.target.alive == false) {
 				setCameraTargetAgent(newAgent);
 			}
+
+			savePopulation();
 		}
 	}
 
 	/**
-	 * Returns the agent with the highest fitness score between the 2.
+	 * Returns the agent with the highest fitness score between the ones passed in.
 	 * 
 	 * In case of same fitness the first participant wins.
-	 * @param _part1 first participant in the tournament 
-	 * @param _part2 second participant in the tournament 
+	 * @param _participants the participants in the tournament
+	 * @return the participant with the highest fitness score
 	 */
-	function getTournamentWinner(_part1:AutoEntity, _part2:AutoEntity) {
-		var winner = _part1;
-		if (_part1.fitnessScore < _part2.fitnessScore)
-			winner = _part2;
+	function getTournamentWinner(_participants:Array<AutoEntity>) {
+		var winner = _participants[0];
+
+		for (participant in _participants) {
+			if (participant.fitnessScore > winner.fitnessScore) {
+				winner = participant;
+			}
+		}
+
 		return winner;
 	}
 

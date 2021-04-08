@@ -277,7 +277,7 @@ class Entity extends FlxSprite {
 	public function replenishEnergy(_energyAmount:Float):Bool {
 		_energyAmount = Math.abs(_energyAmount);
 
-		fitnessScore += _energyAmount / 2;
+		fitnessScore += _energyAmount;
 
 		if (currEnergy <= maxEnergy - _energyAmount) { // if the amount doesn't exceed our max
 			currEnergy += _energyAmount; // increase by the amount
@@ -319,7 +319,7 @@ class Entity extends FlxSprite {
 
 	function calculateFitness() {
 		if (FlxEcho.updates) {
-			fitnessScore += HxFuncs.map(currEnergy, 0, maxEnergy, 0, 0.4);
+			fitnessScore += HxFuncs.map(currEnergy, 0, maxEnergy, 0, 0.8);
 		}
 	}
 
