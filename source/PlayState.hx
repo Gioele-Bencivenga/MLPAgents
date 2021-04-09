@@ -262,10 +262,15 @@ class PlayState extends FlxState {
 	}
 
 	function savePopulation() {
+		//var header = "ID;fitness;energy_eaten;energy_used;connections";
+		//var lines:Array<String> = [''];
+		//for (i in 0...fitnessData.length) {
+			//lines.push() push line by line each entity that has high fitness
+		//}
 		#if sys
 		var filePath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/fitnessData.txt";
 		try {
-			sys.io.File.saveContent(filePath, fitnessData.join("\n"));
+			sys.io.File.saveContent(filePath, fitnessData.join(","));
 		} catch (e) {
 			trace(e.details());
 		}

@@ -113,9 +113,14 @@ class Entity extends FlxSprite {
 	var canDash:Bool;
 
 	/**
-	 * The amount of energy this entity has ingested.
+	 * The amount of energy this entity has ingested until its death.
 	 */
 	var energyEaten:Float;
+
+	/**
+	 * The amount of energy this entity has used until its death.
+	 */
+	var energyUsed:Float;
 
 	public function new() {
 		super();
@@ -155,6 +160,7 @@ class Entity extends FlxSprite {
 		body = this.get_body();
 
 		energyEaten = 0;
+		energyUsed = 0;
 		biteAmount = 0;
 		bite = 7; // FlxG.random.float(5, 10);
 		absorption = 10; // FlxG.random.float(5, 10);
@@ -162,7 +168,7 @@ class Entity extends FlxSprite {
 		currEnergy = maxEnergy;
 
 		fitnessScore = 0;
-		var ft = new FlxTimer().start(0.5, _ -> {
+		var ft = new FlxTimer().start(0.25, _ -> {
 			calculateFitness();
 		}, 0);
 	}
@@ -277,11 +283,10 @@ class Entity extends FlxSprite {
 	public function replenishEnergy(_energyAmount:Float):Bool {
 		_energyAmount = Math.abs(_energyAmount);
 
-		fitnessScore += _energyAmount;
+		energyEaten += _energyAmount; // keep track of energy eaten for fitness
 
 		if (currEnergy <= maxEnergy - _energyAmount) { // if the amount doesn't exceed our max
 			currEnergy += _energyAmount; // increase by the amount
-
 			refreshColor();
 			return false;
 		} else { // if the amount would exceed
@@ -306,8 +311,8 @@ class Entity extends FlxSprite {
 		if (currEnergy > 0) {
 			if (currEnergy >= _energyAmount) { // if we have enough energy to deplete
 				currEnergy -= _energyAmount; // deplete by the amount
-
 				refreshColor();
+				energyUsed += _energyAmount;
 				return true;
 			} else {
 				return false;
@@ -319,7 +324,7 @@ class Entity extends FlxSprite {
 
 	function calculateFitness() {
 		if (FlxEcho.updates) {
-			fitnessScore += HxFuncs.map(currEnergy, 0, maxEnergy, 0, 0.8);
+			fitnessScore = energyEaten;
 		}
 	}
 
