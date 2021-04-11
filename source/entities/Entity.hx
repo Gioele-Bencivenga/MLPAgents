@@ -115,12 +115,12 @@ class Entity extends FlxSprite {
 	/**
 	 * The amount of energy this entity has ingested until its death.
 	 */
-	var energyEaten:Float;
+	public var energyEaten(default, null):Float;
 
 	/**
-	 * The amount of energy this entity has used until its death.
+	 * The amount of energy this entity has used up until its death.
 	 */
-	var energyUsed:Float;
+	public var energyUsed(default, null):Float;
 
 	public function new() {
 		super();
@@ -326,6 +326,10 @@ class Entity extends FlxSprite {
 		if (FlxEcho.updates) {
 			fitnessScore = energyEaten;
 		}
+	}
+
+	function increaseFitnessScore(_amount:Float) {
+		fitnessScore += _amount;
 	}
 
 	function refreshColor() {

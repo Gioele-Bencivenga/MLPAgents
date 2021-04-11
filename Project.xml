@@ -29,7 +29,9 @@
 	<!--Mobile-specific-->
 	<window if="mobile" orientation="portrait" fullscreen="true" width="0" height="0" />
 
-	<!-- you may need to set android sdk version to 23 or higher (as some versions of google play services requires that) https://github.com/HaxeExtension/extension-admob -->
+	<!-- you may need to set android sdk version to 23 or higher 
+		(as some versions of google play services requires that) 
+		https://github.com/HaxeExtension/extension-admob -->
 	<android target-sdk-version="29" if="android" />
 
 	<!-- _____________________________ Path Settings ____________________________ -->
@@ -54,10 +56,14 @@
 	<!-- Adds a `bodyType:Int` field to echo's `Body` class -->
 	<haxeflag name="--macro" value="echo.Macros.add_data('bodyType', 'Int')" />
 
-	<!-- HaxeUI by IanArrigan https://github.com/haxeui/haxeui-core -
-							https://github.com/haxeui/haxeui-flixel -->
+	<!-- HaxeUI by IanArrigan https://github.com/haxeui/haxeui-core https://github.com/haxeui/haxeui-flixel 		
+		WARNING: slows down intellisense due to the heavy use of macros-->
 	<haxelib name="haxeui-core" />
 	<haxelib name="haxeui-flixel" />
+
+	<!-- CSV format library by 0xA3
+		https://github.com/0xA3/xa3.csv -->
+	<haxelib name="xa3.csv" />
 
 	<!-- ______________________________ Haxedefines _____________________________ -->
 

@@ -261,12 +261,7 @@ class PlayState extends FlxState {
 		savePopulation();
 	}
 
-	function savePopulation() {
-		//var header = "ID;fitness;energy_eaten;energy_used;connections";
-		//var lines:Array<String> = [''];
-		//for (i in 0...fitnessData.length) {
-			//lines.push() push line by line each entity that has high fitness
-		//}
+	function printFitness() {
 		#if sys
 		var filePath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/fitnessData.txt";
 		try {
@@ -275,6 +270,23 @@ class PlayState extends FlxState {
 			trace(e.details());
 		}
 		#end
+	}
+
+	function savePopulation() {
+		var header = "ID;fitness;energy_eaten;energy_used;connections";
+		var lines:Array<String> = [''];
+		for (i in 0...agents.length) {
+			if (agents.members[i] != null) {
+				lines.push('${agents.members[i].body.id};${agents.members[i].fitnessScore};${agents.members[i].energyEaten};${agents.members[i].energyUsed};${agents.members[i].brain.connections}');
+			}
+		}
+		var linesAsString = '';
+		for (i in 0...lines.length) {
+			linesAsString = lines.join('\n');
+		}
+		var csvString = '${header}\n${linesAsString}';
+		var csv = xa3.Csv.fromString("agents_pop", csvString);
+		trace('generated csv:\n${csv}');
 	}
 
 	function link_website_onClick(_) {
@@ -441,12 +453,6 @@ class PlayState extends FlxState {
 		if (FlxEcho.updates) {
 			super.update(elapsed);
 		}
-
-		// if (FlxG.mouse.wheel != 0) {
-		//	var slider = uiView.findComponent("sld_zoom", Slider);
-
-		//	slider.pos += FlxMath.bound(FlxG.mouse.wheel, -7, 7);
-		// }
 	}
 
 	/**
@@ -465,7 +471,7 @@ class PlayState extends FlxState {
 		if (simCam.target != null)
 			cast(simCam.target, AutoEntity).isCamTarget = false;
 
-		simCam.follow(_target, 0.2);
+		simCam.follow(_target, 0.05);
 		if (DEBUG_SENSORS)
 			cast(_target, AutoEntity).isCamTarget = true;
 	}
@@ -580,7 +586,7 @@ class PlayState extends FlxState {
 				setCameraTargetAgent(newAgent);
 			}
 
-			savePopulation();
+			printFitness();
 		}
 	}
 
