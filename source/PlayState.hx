@@ -71,9 +71,9 @@ class PlayState extends FlxState {
 	public static inline final AGENTS_COUNT:Int = 25;
 
 	/**
-	 * Maximum number of agents that can be in the simulation at any time.
+	 * Maximum number of resources that can be in the simulation at any time.
 	 */
-	public static inline final MAX_RESOURCES:Int = 100;
+	public static inline final MAX_RESOURCES:Int = 170;
 
 	/**
 	 * Whether we want to draw the sensors for all agents or not.
@@ -265,7 +265,7 @@ class PlayState extends FlxState {
 		#if sys
 		var filePath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/fitnessData.txt";
 		try {
-			sys.io.File.saveContent(filePath, fitnessData.join(","));
+			sys.io.File.saveContent(filePath, fitnessData.join('\n'));
 		} catch (e) {
 			trace(e.details());
 		}
@@ -324,7 +324,7 @@ class PlayState extends FlxState {
 	function generateCaveTilemap() {
 		// instantiate generator and generate the level
 		var gen = new Generator(70, 110);
-		var levelData:Array<Array<Int>> = gen.generateCave(AGENTS_COUNT, 0.09, 2, 2, 2);
+		var levelData:Array<Array<Int>> = gen.generateCave(AGENTS_COUNT, 0.05, 2, 2, 2);
 
 		// reset the groups before filling them again
 		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], agents, resources);
@@ -412,11 +412,14 @@ class PlayState extends FlxState {
 							case 2: // we hit an entity
 								if (ent.biteAmount > 0) { // we are trying to bite
 									var hitEnt = cast(body2.get_object(), AutoEntity);
-									var chunk = hitEnt.deplete((ent.bite * (ent.biteAmount * 2)));
-									ent.replenishEnergy(chunk * ent.absorption);
 									if (hitEnt.biteAmount > 0) { // other entity is biting too
-										var ourChunk = ent.deplete((hitEnt.bite * (hitEnt.biteAmount * 2)));
-										hitEnt.replenishEnergy(ourChunk * hitEnt.absorption);
+										if (ent.currEnergy >= hitEnt.currEnergy) {
+											var chunk = hitEnt.deplete(200);
+											ent.replenishEnergy(chunk);
+										} else {
+											var chunk = ent.deplete(200);
+											hitEnt.replenishEnergy(chunk);
+										}
 									}
 								}
 							case 3: // we hit a resource
@@ -529,7 +532,7 @@ class PlayState extends FlxState {
 							a != null; // filter out null agents
 						});
 						// create competitor group and fill it with random competitors
-						var competitors1:Array<AutoEntity> = [for (i in 0...7) null];
+						var competitors1:Array<AutoEntity> = [for (i in 0...AGENTS_COUNT - 4) null];
 						for (i in 0...competitors1.length) {
 							switch (i) {
 								case 0:
@@ -542,6 +545,7 @@ class PlayState extends FlxState {
 						}
 						var winner1 = getTournamentWinner(competitors1);
 						var parent1 = winner1;
+						// agents.members.fil
 						var parent2 = FlxG.random.getObject(array);
 						while (parent2 == parent1) {
 							parent2 = FlxG.random.getObject(array);
@@ -557,7 +561,7 @@ class PlayState extends FlxState {
 						// trace('crossed brain: ${parent2.brain.connections} len: ${parent2.brain.connections.length}');
 
 						// gaussian mutation
-						var mutatedBrain = [for (i in 0...parent2.brain.connections.length) FlxG.random.floatNormal(0, 0.05)];
+						var mutatedBrain = [for (i in 0...parent2.brain.connections.length) FlxG.random.floatNormal(0, 0.04)];
 						for (i in 0...mutatedBrain.length) {
 							mutatedBrain[i] = mutatedBrain[i] + parent2.brain.connections[i];
 							if (mutatedBrain[i] > 1)
@@ -572,7 +576,7 @@ class PlayState extends FlxState {
 						// trace('child brain: ${newAgent.brain.connections} len: ${newAgent.brain.connections.length}');
 
 						var resourceAmt = 3;
-						if (resources.countLiving() <= 55) {
+						if (resources.countLiving() <= MAX_RESOURCES - 10) {
 							for (i in 0...resourceAmt) {
 								var newResPos = getEmptySpace();
 								createResource(newResPos.x, newResPos.y);
@@ -617,7 +621,7 @@ class PlayState extends FlxState {
 	 */
 	function createAgent(_x:Float, _y:Float, ?_connections:Array<Float>):AutoEntity {
 		var newAgent = agents.recycle(AutoEntity.new); // recycle agent from pool
-		newAgent.init(_x, _y, 30, 15, _connections); // add body, brain ecc
+		newAgent.init(_x, _y, 30, 20, _connections); // add body, brain ecc
 		newAgent.add_to_group(collidableBodies); // add to linecasting group
 		newAgent.add_to_group(entitiesCollGroup); // add to collision group
 		agents.add(newAgent); // add to recycling group

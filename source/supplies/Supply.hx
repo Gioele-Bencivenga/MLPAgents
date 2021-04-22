@@ -56,7 +56,7 @@ class Supply extends FlxSprite {
 	/**
 	 * Initializes the resource.
 	 */
-	public function init(_x:Float, _y:Float, _minStartAmt:Int = 20, _maxStartAmt:Int = MAX_START_AMOUNT) {
+	public function init(_x:Float, _y:Float, _minStartAmt:Int = 40, _maxStartAmt:Int = MAX_START_AMOUNT) {
 		x = _x;
 		y = _y;
 
@@ -72,9 +72,8 @@ class Supply extends FlxSprite {
 
 		this.add_body({
 			shape: {
-				type: RECT,
-				width: currAmount,
-				height: currAmount
+				type: CIRCLE,
+				radius: currAmount / 2
 			},
 			mass: HxFuncs.map(currAmount, 0, MAX_START_AMOUNT, 0, 0.6),
 			drag_length: 200,

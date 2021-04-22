@@ -17,12 +17,17 @@ class Entity extends FlxSprite {
 	/**
 	 * Maximum velocity that this `Entity`'s physics body can reach.
 	 */
-	public static inline final MAX_VELOCITY = 200;
+	public static inline final MAX_VELOCITY = 50;
 
 	/**
 	 * Maximum rotational velocity that this `Entity`'s physics body can reach.
 	 */
-	public static inline final MAX_ROTATIONAL_VELOCITY = 400;
+	public static inline final MAX_ROTATIONAL_VELOCITY = 50;
+
+	/**
+	 * Maximum amount that this `Entity` can change its rotation by.
+	 */
+	public static inline final MAX_ROTATION_AMOUNT = 4;
 
 	/**
 	 * Default color of entities on the colorwheel.
@@ -68,7 +73,7 @@ class Entity extends FlxSprite {
 	 * 
 	 * `energy` is used to move, attack, eat...
 	 * 
-	 * and is replenished by eating and resting.
+	 * and is replenished by eating.
 	 */
 	public var currEnergy(default, null):Float;
 
@@ -139,9 +144,9 @@ class Entity extends FlxSprite {
 		canBeDepleted = true;
 		canDash = true;
 
-		var move = 150; // FlxG.random.float(300, 500);
-		moveRange = new FlxRange<Float>(-move / 2, move);
-		var rot = MAX_ROTATIONAL_VELOCITY; // FlxG.random.float(200, 400);
+		var move = 5;
+		moveRange = new FlxRange<Float>(0, move);
+		var rot = MAX_ROTATION_AMOUNT;
 		rotationRange = new FlxRange<Float>(-rot, rot);
 
 		/// BODY
@@ -151,9 +156,9 @@ class Entity extends FlxSprite {
 				width: _width,
 				height: _height
 			},
-			mass: 0.3, // FlxG.random.float(0.1, 0.5),
-			drag_length: 300, // FlxG.random.float(300, 500),
-			rotational_drag: 70, // FlxG.random.float(40, 80),
+			mass: 0.3,
+			drag_length: 50,
+			rotational_drag: 50,
 			max_velocity_length: MAX_VELOCITY,
 			max_rotational_velocity: MAX_ROTATIONAL_VELOCITY,
 		}).bodyType = 2; // info used by environment sensors
@@ -161,14 +166,14 @@ class Entity extends FlxSprite {
 
 		energyEaten = 0;
 		energyUsed = 0;
-		biteAmount = 0;
-		bite = 7; // FlxG.random.float(5, 10);
-		absorption = 10; // FlxG.random.float(5, 10);
-		maxEnergy = 600; // FlxG.random.float(500, 1000);
+		biteAmount = 0.9;
+		bite = 8;
+		absorption = 10;
+		maxEnergy = 700;
 		currEnergy = maxEnergy;
 
 		fitnessScore = 0;
-		var ft = new FlxTimer().start(0.25, _ -> {
+		var ft = new FlxTimer().start(1, _ -> {
 			calculateFitness();
 		}, 0);
 	}
@@ -185,7 +190,7 @@ class Entity extends FlxSprite {
 
 			controlBite(0);
 			if (FlxG.keys.pressed.F) {
-				controlBite(0.5);
+				controlBite(0.2);
 			}
 
 			controlDash(0.5);
@@ -211,11 +216,10 @@ class Entity extends FlxSprite {
 	 * @param _moveAmount how much to move forward or backwards (-1 to 1), and how much energy will be depleted
 	 */
 	public function move(_moveAmount:Float) {
-		if (useEnergy(_moveAmount)) { // if the energy is successfully expended
+		if (useEnergy(_moveAmount / 3)) { // if the energy is successfully expended
 			var mappedMoveAmt = HxFuncs.map(_moveAmount, -1, 1, moveRange.start, moveRange.end);
 
-			// move not relative to rotation?
-			body.push(mappedMoveAmt, true);
+			body.push(mappedMoveAmt, true, ForceType.VELOCITY);
 		}
 	}
 
@@ -225,10 +229,10 @@ class Entity extends FlxSprite {
 	 * @param _rotationAmount how much to rotate left or right (-1 to 1)
 	 */
 	public function rotate(_rotationAmount:Float) {
-		if (useEnergy(_rotationAmount / 2)) { // less energy is required to rotate
+		if (useEnergy(_rotationAmount / 3)) {
 			var mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
 
-			body.rotational_velocity = mappedRotationAmt;
+			body.rotation += mappedRotationAmt;
 		}
 	}
 
@@ -284,6 +288,7 @@ class Entity extends FlxSprite {
 		_energyAmount = Math.abs(_energyAmount);
 
 		energyEaten += _energyAmount; // keep track of energy eaten for fitness
+		increaseFitnessSc(_energyAmount); // increase fitness by how much we ate
 
 		if (currEnergy <= maxEnergy - _energyAmount) { // if the amount doesn't exceed our max
 			currEnergy += _energyAmount; // increase by the amount
@@ -324,11 +329,15 @@ class Entity extends FlxSprite {
 
 	function calculateFitness() {
 		if (FlxEcho.updates) {
-			fitnessScore = energyEaten;
+			increaseFitnessSc(HxFuncs.map(currEnergy, 0, maxEnergy, 0, 1));
 		}
 	}
 
-	function increaseFitnessScore(_amount:Float) {
+	/**
+	 * Increases the `fitnessScore` by a set amount.
+	 * @param _amount how much we want to increase `fitnessScore` by
+	 */
+	function increaseFitnessSc(_amount:Float) {
 		fitnessScore += _amount;
 	}
 
