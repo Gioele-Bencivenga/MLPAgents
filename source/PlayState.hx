@@ -73,7 +73,7 @@ class PlayState extends FlxState {
 	/**
 	 * Maximum number of resources that can be in the simulation at any time.
 	 */
-	public static inline final MAX_RESOURCES:Int = 170;
+	public static inline final MAX_RESOURCES:Int = 100;
 
 	/**
 	 * Whether we want to draw the sensors for all agents or not.
@@ -324,7 +324,7 @@ class PlayState extends FlxState {
 	function generateCaveTilemap() {
 		// instantiate generator and generate the level
 		var gen = new Generator(70, 110);
-		var levelData:Array<Array<Int>> = gen.generateCave(AGENTS_COUNT, 0.05, 2, 2, 2);
+		var levelData:Array<Array<Int>> = gen.generateCave(0.1, 2, 2, 2);
 
 		// reset the groups before filling them again
 		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], agents, resources);
@@ -373,10 +373,11 @@ class PlayState extends FlxState {
 		add(canvas);
 
 		/// ENTITIES
-		for (j in 0...levelData.length) { // step through level data and add entities
+		for (j in 0...levelData.length) { // step through level data and stuff
 			for (i in 0...levelData[j].length) {
 				switch (levelData[j][i]) {
 					case 2:
+						// not used right now
 						createAgent(i * TILE_SIZE, j * TILE_SIZE);
 					case 3:
 						createResource(i * TILE_SIZE, j * TILE_SIZE);
@@ -384,6 +385,12 @@ class PlayState extends FlxState {
 						continue;
 				}
 			}
+		}
+
+		// add agents
+		for (i in 0...AGENTS_COUNT) {
+			var pos = getEmptySpace();
+			createAgent(pos.x, pos.y);
 		}
 
 		/// COLLISIONS
@@ -621,7 +628,7 @@ class PlayState extends FlxState {
 	 */
 	function createAgent(_x:Float, _y:Float, ?_connections:Array<Float>):AutoEntity {
 		var newAgent = agents.recycle(AutoEntity.new); // recycle agent from pool
-		newAgent.init(_x, _y, 30, 20, _connections); // add body, brain ecc
+		newAgent.init(_x, _y, 25, 17, _connections); // add body, brain ecc
 		newAgent.add_to_group(collidableBodies); // add to linecasting group
 		newAgent.add_to_group(entitiesCollGroup); // add to collision group
 		agents.add(newAgent); // add to recycling group
@@ -649,7 +656,7 @@ class PlayState extends FlxState {
 	 * 
 	 * If no bodies are found the position is returned.
 	 */
-	function getEmptySpace(_lineLength:Float = 80, _lineAmt:Int = 20) {
+	function getEmptySpace(_lineLength:Float = 120, _lineAmt:Int = 10) {
 		var foundEmptySpace = false;
 		var emptyPosition = new Vector2(50, 50);
 		do {

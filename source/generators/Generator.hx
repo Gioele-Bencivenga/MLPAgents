@@ -127,7 +127,7 @@ class Generator {
 	 * @param ?_levelHeight if specified overrides the height that was given to the `Generator` on creation
 	 * @return a matrix of `Int`s that's hopefully similar in shape to a cave
 	 */
-	public function generateCave(_agentsCount = 1, _aliveChance = 0.23, _deathLimit = 2, _birthLimit = 3, _stepNumber = 7, ?_levelWidth:Int,
+	public function generateCave(_aliveChance = 0.23, _deathLimit = 2, _birthLimit = 3, _stepNumber = 7, ?_levelWidth:Int,
 			?_levelHeight:Int):Array<Array<Int>> {
 		// if new dimensions were passed in we modify them
 		if (_levelWidth != null)
@@ -147,7 +147,6 @@ class Generator {
 			levelData = doStep(levelData, _deathLimit, _birthLimit);
 		}
 
-		levelData = placeAgents(levelData, _agentsCount);
 		levelData = placeResources(levelData);
 
 		return levelData;

@@ -27,7 +27,7 @@ class Entity extends FlxSprite {
 	/**
 	 * Maximum amount that this `Entity` can change its rotation by.
 	 */
-	public static inline final MAX_ROTATION_AMOUNT = 4;
+	public static inline final MAX_ROTATION_AMOUNT = 10;
 
 	/**
 	 * Default color of entities on the colorwheel.
@@ -163,6 +163,7 @@ class Entity extends FlxSprite {
 			max_rotational_velocity: MAX_ROTATIONAL_VELOCITY,
 		}).bodyType = 2; // info used by environment sensors
 		body = this.get_body();
+		body.rotation = FlxG.random.int(0, 360);
 
 		energyEaten = 0;
 		energyUsed = 0;
@@ -205,7 +206,7 @@ class Entity extends FlxSprite {
 			} else {
 				rotate(0);
 			}
-		 */
+		*/
 	}
 
 	/**
@@ -216,7 +217,7 @@ class Entity extends FlxSprite {
 	 * @param _moveAmount how much to move forward or backwards (-1 to 1), and how much energy will be depleted
 	 */
 	public function move(_moveAmount:Float) {
-		if (useEnergy(_moveAmount / 3)) { // if the energy is successfully expended
+		if (useEnergy(_moveAmount)) { // if the energy is successfully expended
 			var mappedMoveAmt = HxFuncs.map(_moveAmount, -1, 1, moveRange.start, moveRange.end);
 
 			body.push(mappedMoveAmt, true, ForceType.VELOCITY);
@@ -229,7 +230,7 @@ class Entity extends FlxSprite {
 	 * @param _rotationAmount how much to rotate left or right (-1 to 1)
 	 */
 	public function rotate(_rotationAmount:Float) {
-		if (useEnergy(_rotationAmount / 3)) {
+		if (useEnergy(_rotationAmount)) {
 			var mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
 
 			body.rotation += mappedRotationAmt;
@@ -245,7 +246,7 @@ class Entity extends FlxSprite {
 	 */
 	public function controlBite(_activation:Float) {
 		if (_activation > 0) {
-			if (useEnergy(_activation)) {
+			if (useEnergy(_activation / 2)) {
 				biteAmount = _activation;
 			} else {
 				biteAmount = 0;

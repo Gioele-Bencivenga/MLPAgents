@@ -126,29 +126,12 @@ class AutoEntity extends Entity {
 	override public function init(_x:Float, _y:Float, _width:Int, _height:Int, ?_connections:Array<Float>) {
 		super.init(_x, _y, _width, _height);
 
-		var rot = 30.;
-		possibleRotations = new FlxRange(-rot, rot);
+		possibleRotations = new FlxRange(0., 0.);
 
-		sensorsRotations = [
-			for (i in 0...SENSORS_COUNT) {
-				switch (i) {
-					case 0:
-						possibleRotations.start;
-					case 1:
-						possibleRotations.start + (possibleRotations.end / 2);
-					case 2:
-						possibleRotations.start + possibleRotations.end;
-					case 3:
-						possibleRotations.end + (possibleRotations.start / 2);
-					case 4:
-						possibleRotations.end;
-					case any:
-						0;
-				}
-			}
-		];
+		var rot = 80.;
+		setSensorRotations(-rot, rot);
 
-		var lengthVals = [150, 250, 350];
+		var lengthVals = [350, 350, 350];
 		sensorsLengths = [
 			for (i in 0...SENSORS_COUNT) {
 				switch (i) {
@@ -171,7 +154,7 @@ class AutoEntity extends Entity {
 		sensors = [for (i in 0...SENSORS_COUNT) null]; // fill the sensors array with nulls
 
 		senserTimer = new FlxTimer();
-		sensorRefreshRate = 0.02;
+		sensorRefreshRate = 0.027;
 		senserTimer.start(sensorRefreshRate, (_) -> sense(), 0);
 
 		brain = new MLP(SENSORS_INPUTS // number of input neurons dedicated to sensors
@@ -250,58 +233,54 @@ class AutoEntity extends Entity {
 					sensors[i].set_from_vector(sensorPos, body.rotation + sensorsRotations[i], sensorsLengths[i]);
 					// cast the line, returning the first intersection
 					var hit:Intersection = null;
-					// try {
 					hit = sensors[i].linecast(bodiesArray);
-					// }
 					if (hit != null) { // if we hit something
-						// check out assignment problem
-						sensorInputs[i] = hit.body.bodyType; // put it in the array
 						var lineColor = FlxColor.RED;
 						switch (hit.body.bodyType) {
 							case 1: // hit a wall
 								lineColor = FlxColor.WHITE;
-								// sensorInputs[i] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToWall neuron
-								sensorInputs[i] = HxFuncs.map(hit.closest.distance, 0, sensorsLengths[i], 0,
-									1); // maybe this will suggest them to stay away from the wall?
+								sensorInputs[i] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToWall neuron
+							// sensorInputs[i] = HxFuncs.map(hit.closest.distance, 0, sensorsLengths[i], 0,
+							//	1); // maybe this will suggest them to stay away from the wall?
 							case 2: // hit an agent
 								lineColor = FlxColor.ORANGE;
-								sensorInputs[i + 1] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToEntity neuron
+								sensorInputs[i + SENSORS_COUNT] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToEntity neuron
 								var agent = cast(hit.body.get_object(), AutoEntity);
-								sensorInputs[i + 3] = HxFuncs.map(agent.currEnergy, 0, agent.maxEnergy, 0,
+								sensorInputs[i + (SENSORS_COUNT * 2)] = HxFuncs.map(agent.currEnergy, 0, agent.maxEnergy, 0,
 									1); // put agent's energy amount in entityEnergy neuron
 							case 3: // hit a resource
 								lineColor = FlxColor.MAGENTA;
-								sensorInputs[i + 2] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToResource neuron
+								sensorInputs[i + (SENSORS_COUNT * 3)] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToResource neuron
 								var supp = cast(hit.body.get_object(), Supply);
-								sensorInputs[i + 4] = HxFuncs.map(supp.currAmount, 0, Supply.MAX_START_AMOUNT, 0,
+								sensorInputs[i + (SENSORS_COUNT * 4)] = HxFuncs.map(supp.currAmount, 0, Supply.MAX_START_AMOUNT, 0,
 									1); // put supply's amount in supplyAmount neuron
 							case unknown: // hit unknown
 								lineColor = FlxColor.BROWN;
 								sensorInputs[i] = 0;
-								sensorInputs[i + 1] = 0;
-								sensorInputs[i + 2] = 0;
-								sensorInputs[i + 3] = 0;
-								sensorInputs[i + 4] = 0;
+								sensorInputs[i + SENSORS_COUNT] = 0;
+								sensorInputs[i + (SENSORS_COUNT * 2)] = 0;
+								sensorInputs[i + (SENSORS_COUNT * 3)] = 0;
+								sensorInputs[i + (SENSORS_COUNT * 4)] = 0;
 						}
 						if (isCamTarget)
 							DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y, lineColor, 2);
 					} else { // if we didn't hit anything
 						// reflect it in the array
 						sensorInputs[i] = 0;
-						sensorInputs[i + 1] = 0;
-						sensorInputs[i + 2] = 0;
-						sensorInputs[i + 3] = 0;
-						sensorInputs[i + 4] = 0;
+						sensorInputs[i + SENSORS_COUNT] = 0;
+						sensorInputs[i + (SENSORS_COUNT * 2)] = 0;
+						sensorInputs[i + (SENSORS_COUNT * 3)] = 0;
+						sensorInputs[i + (SENSORS_COUNT * 4)] = 0;
 
 						if (isCamTarget)
 							DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y);
 					}
 					sensors[i].put(); // put the linecast
 				}
-				// put mapped sensor inputs into array of inputs
+				// put sensor inputs into array of inputs
 				brainInputs = [
 					for (input in sensorInputs)
-						HxFuncs.map(input, 0, 3, 0, 1)
+						input
 				];
 
 				// add input neurons for current velocity
@@ -312,11 +291,13 @@ class AutoEntity extends Entity {
 				brainInputs = brainInputs.concat([HxFuncs.map(FlxMath.wrap(Std.int(body.rotation), 0, 360), 0, 360, 0, 1)]);
 
 				// add input neuron for current energy level
-				// activation increases the closer we are to maxEnergy
 				brainInputs = brainInputs.concat([HxFuncs.map(currEnergy, 0, maxEnergy, 0, 1)]);
 
 				// add bias neuron at the end
 				brainInputs = brainInputs.concat([BIAS]);
+
+				//if (isCamTarget)
+					//trace('sensor inputs:\n${brainInputs}');
 			}
 		}
 	}
@@ -355,14 +336,12 @@ class AutoEntity extends Entity {
 					case 1:
 						possibleRotations.start + (possibleRotations.end / 2);
 					case 2:
-						possibleRotations.start + (possibleRotations.end - (possibleRotations.end / 10));
+						possibleRotations.start + possibleRotations.end;
 					case 3:
-						possibleRotations.end + (possibleRotations.start + (possibleRotations.end / 10));
-					case 4:
 						possibleRotations.end + (possibleRotations.start / 2);
-					case 5:
+					case 4:
 						possibleRotations.end;
-					default:
+					case any:
 						0;
 				}
 			}
