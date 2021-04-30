@@ -27,7 +27,7 @@ class Entity extends FlxSprite {
 	/**
 	 * Maximum amount that this `Entity` can change its rotation by.
 	 */
-	public static inline final MAX_ROTATION_AMOUNT = 10;
+	public static inline final MAX_ROTATION_AMOUNT = 6;
 
 	/**
 	 * Default color of entities on the colorwheel.
@@ -144,8 +144,8 @@ class Entity extends FlxSprite {
 		canBeDepleted = true;
 		canDash = true;
 
-		var move = 5;
-		moveRange = new FlxRange<Float>(0, move);
+		var move = 4;
+		moveRange = new FlxRange<Float>(-move, move);
 		var rot = MAX_ROTATION_AMOUNT;
 		rotationRange = new FlxRange<Float>(-rot, rot);
 
@@ -206,7 +206,7 @@ class Entity extends FlxSprite {
 			} else {
 				rotate(0);
 			}
-		*/
+		 */
 	}
 
 	/**

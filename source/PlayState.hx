@@ -1,5 +1,8 @@
 package;
 
+import flixel.FlxBasic;
+import flixel.input.actions.FlxActionManager;
+import flixel.input.actions.FlxAction.FlxActionDigital;
 import echo.Body;
 import echo.Line;
 import utilities.DebugLine;
@@ -73,7 +76,7 @@ class PlayState extends FlxState {
 	/**
 	 * Maximum number of resources that can be in the simulation at any time.
 	 */
-	public static inline final MAX_RESOURCES:Int = 100;
+	public static inline final MAX_RESOURCES:Int = 90;
 
 	/**
 	 * Whether we want to draw the sensors for all agents or not.
@@ -135,11 +138,40 @@ class PlayState extends FlxState {
 	var simUpdates(default, set):Bool = true;
 
 	/**
-	 * Array containing the fitness values of deceased entities over time.
+	 * Array containing the minimum fitness values of entities over time.
 	 * 
 	 * Used to export values for further analysis.
 	 */
-	var fitnessData:Array<Float>;
+	var minFitnessData:Array<Float>;
+
+	/**
+	 * Array containing the maximum fitness values of entities over time.
+	 * 
+	 * Used to export values for further analysis.
+	 */
+	var maxFitnessData:Array<Float>;
+
+	/**
+	 * Array containing the average fitness values of entities over time.
+	 * 
+	 * Used to export values for further analysis.
+	 */
+	var avgFitnessData:Array<Float>;
+
+	/**
+	 * Incremented with each death.
+	 */
+	var deathCounter:Int;
+
+	/**
+	 * Action triggered when we want to turn the graphics on/off.
+	 */
+	var toggleGraphicsAct:FlxActionDigital;
+
+	/**
+	 * The manager for our actions.
+	 */
+	var actionManager:FlxActionManager;
 
 	/**
 	 * Automatically sets the value of `FlxEcho.updates`.
@@ -162,11 +194,21 @@ class PlayState extends FlxState {
 		// generate world
 		generateCaveTilemap();
 
-		var t = new FlxTimer().start(1, function(_) {
-			cleanupDeadAgents();
-		}, 0);
+		var t1 = new FlxTimer().start(10, function(_) cleanupDeadAgents(), 0);
 
-		fitnessData = [0];
+		var t2 = new FlxTimer().start(60, function(_) printFitness(), 0);
+
+		this.visible = false;
+
+		minFitnessData = [];
+		maxFitnessData = [];
+		avgFitnessData = [];
+
+		toggleGraphicsAct = new FlxActionDigital("toggle_graphics", function(_) toggleGraphics(this));
+		toggleGraphicsAct.addKey(ENTER, JUST_PRESSED);
+		actionManager = new FlxActionManager();
+		actionManager.addActions([toggleGraphicsAct]);
+		FlxG.inputs.add(actionManager);
 	}
 
 	function setupCameras() {
@@ -180,7 +222,7 @@ class PlayState extends FlxState {
 		FlxG.cameras.add(uiCam); // add it to the cameras list (simCam doesn't need because we set it as the main already)
 
 		/// CUSTOMIZATION
-		simCam.zoomSpeed = 4;
+		simCam.zoomSpeed = 8;
 		simCam.targetZoom = 1.2;
 		simCam.zoomMargin = 0.2;
 		simCam.bgColor.setRGB(25, 21, 0);
@@ -262,10 +304,49 @@ class PlayState extends FlxState {
 	}
 
 	function printFitness() {
+		// get minimum fitness in agents
+		var minFitness = 5.;
+		for (agent in agents) {
+			if (agent.alive && agent.exists) {
+				if (agent.fitnessScore < minFitness) {
+					minFitness = agent.fitnessScore;
+				}
+			}
+		}
+		minFitnessData.push(minFitness);
+		// get maximum fitness in agents
+		var maxFitness = 0.;
+		for (agent in agents) {
+			if (agent.alive && agent.exists) {
+				if (agent.fitnessScore > maxFitness) {
+					maxFitness = agent.fitnessScore;
+				}
+			}
+		}
+		maxFitnessData.push(maxFitness);
+		// get average fitness in agents
+		var avgFitness = 0.;
+		var sum = 0.;
+		var num = 0;
+		for (agent in agents) {
+			if (agent.alive && agent.exists) {
+				sum += agent.fitnessScore;
+				num++;
+			}
+		}
+		avgFitness = sum / num;
+		avgFitnessData.push(avgFitness);
+
 		#if sys
-		var filePath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/fitnessData.txt";
+		var minFilePath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/minFitnessData.txt";
+		var maxFilePath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/maxFitnessData.txt";
+		var avgFilePath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/avgFitnessData.txt";
+		var deathFilePath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/deathData.txt";
 		try {
-			sys.io.File.saveContent(filePath, fitnessData.join('\n'));
+			sys.io.File.saveContent(minFilePath, minFitnessData.join('\n'));
+			sys.io.File.saveContent(maxFilePath, maxFitnessData.join('\n'));
+			sys.io.File.saveContent(avgFilePath, avgFitnessData.join('\n'));
+			sys.io.File.saveContent(deathFilePath, '${deathCounter}');
 		} catch (e) {
 			trace(e.details());
 		}
@@ -323,8 +404,8 @@ class PlayState extends FlxState {
 
 	function generateCaveTilemap() {
 		// instantiate generator and generate the level
-		var gen = new Generator(70, 110);
-		var levelData:Array<Array<Int>> = gen.generateCave(0.1, 2, 2, 2);
+		var gen = new Generator(80, 130);
+		var levelData:Array<Array<Int>> = gen.generateCave(0.06, 2, 2, 2);
 
 		// reset the groups before filling them again
 		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], agents, resources);
@@ -459,6 +540,18 @@ class PlayState extends FlxState {
 		setCameraTargetAgent(agents.getFirstAlive());
 	}
 
+	/**
+	 * Toggle the `visible` property of a `FlxBasic`.
+	 * @param _obj the `FlxBasic` we want to toggle the visiblity of 
+	 */
+	function toggleGraphics(_obj:FlxBasic) {
+		if (_obj.visible == true) {
+			_obj.visible = false;
+		} else {
+			_obj.visible = true;
+		}
+	}
+
 	override function update(elapsed:Float) {
 		if (FlxEcho.updates) {
 			super.update(elapsed);
@@ -530,9 +623,8 @@ class PlayState extends FlxState {
 					if (agent.currEnergy <= 1) {
 						var agX = agent.body.x;
 						var agY = agent.body.y;
-						// trace('fit: ${agent.fitnessScore}');
-						fitnessData.push(agent.fitnessScore);
 						agent.kill(); // kill previous agent
+						deathCounter++;
 
 						// get an array of our agents
 						var array = agents.members.filter((a:AutoEntity) -> {
@@ -568,7 +660,7 @@ class PlayState extends FlxState {
 						// trace('crossed brain: ${parent2.brain.connections} len: ${parent2.brain.connections.length}');
 
 						// gaussian mutation
-						var mutatedBrain = [for (i in 0...parent2.brain.connections.length) FlxG.random.floatNormal(0, 0.04)];
+						var mutatedBrain = [for (i in 0...parent2.brain.connections.length) FlxG.random.floatNormal(0, 0.05)];
 						for (i in 0...mutatedBrain.length) {
 							mutatedBrain[i] = mutatedBrain[i] + parent2.brain.connections[i];
 							if (mutatedBrain[i] > 1)
@@ -582,8 +674,8 @@ class PlayState extends FlxState {
 						newAgent = createAgent(newAgentPos.x, newAgentPos.y, mutatedBrain);
 						// trace('child brain: ${newAgent.brain.connections} len: ${newAgent.brain.connections.length}');
 
-						var resourceAmt = 3;
-						if (resources.countLiving() <= MAX_RESOURCES - 10) {
+						var resourceAmt = 2;
+						if (resources.countLiving() <= MAX_RESOURCES - 5) {
 							for (i in 0...resourceAmt) {
 								var newResPos = getEmptySpace();
 								createResource(newResPos.x, newResPos.y);
@@ -596,8 +688,6 @@ class PlayState extends FlxState {
 			if (simCam.target.alive == false) {
 				setCameraTargetAgent(newAgent);
 			}
-
-			printFitness();
 		}
 	}
 

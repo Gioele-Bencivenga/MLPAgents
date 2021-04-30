@@ -102,7 +102,7 @@ class MLP {
 		}
 
 		// convert outputLayer range from 0..1 to -1..1
-		outputOutputs = [for (input in _inputLayer) HxFuncs.map(input, 0, 1, -1, 1)];
+		outputOutputs = [for (output in outputLayer) HxFuncs.map(output, 0, 1, -1, 1)];
 
 		return outputOutputs;
 	}

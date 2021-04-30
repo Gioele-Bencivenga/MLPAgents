@@ -1,10 +1,9 @@
 package entities;
 
+import flixel.FlxG;
 import supplies.Supply;
 import echo.data.Data.Intersection;
 import flixel.math.FlxMath;
-import flixel.FlxSprite;
-import flixel.FlxG;
 import brains.MLP;
 import hxmath.math.MathUtil;
 import flixel.util.helpers.FlxRange;
@@ -48,7 +47,7 @@ class AutoEntity extends Entity {
 	 * 
 	 * The `sense()` function will be run by the `senserTimer` each `sensorRefreshRate` seconds.
 	 */
-	var sensorRefreshRate:Float;
+	public static inline final SENSORS_REFRESH_RATE:Float = 0.027;
 
 	/**
 	 * The sensors' distance from the center of this entity's body.
@@ -131,7 +130,7 @@ class AutoEntity extends Entity {
 		var rot = 80.;
 		setSensorRotations(-rot, rot);
 
-		var lengthVals = [350, 350, 350];
+		var lengthVals = [200, 400, 500];
 		sensorsLengths = [
 			for (i in 0...SENSORS_COUNT) {
 				switch (i) {
@@ -154,8 +153,7 @@ class AutoEntity extends Entity {
 		sensors = [for (i in 0...SENSORS_COUNT) null]; // fill the sensors array with nulls
 
 		senserTimer = new FlxTimer();
-		sensorRefreshRate = 0.027;
-		senserTimer.start(sensorRefreshRate, (_) -> sense(), 0);
+		senserTimer.start(SENSORS_REFRESH_RATE, (_) -> sense(), 0);
 
 		brain = new MLP(SENSORS_INPUTS // number of input neurons dedicated to sensors
 			+ 1 // own velocity neuron
@@ -163,7 +161,7 @@ class AutoEntity extends Entity {
 			+ 1 // own energy level neuron
 			+ BIAS // bias neuron that's always firing 1
 			// HIDDEN LAYER
-			, 10 // arbitrary number
+			, 15 // arbitrary number
 			// OUTPUT LAYER
 			, 2 // rotation and movement outputs
 			// + 1 // bite output / AUTO BITE FOR NOW
@@ -176,8 +174,6 @@ class AutoEntity extends Entity {
 	override function update(elapsed:Float) {
 		if (FlxEcho.updates) {
 			super.update(elapsed);
-
-			act();
 		}
 	}
 
@@ -188,7 +184,6 @@ class AutoEntity extends Entity {
 				brainReady = true;
 				// decide how to act based on current inputs
 				var brainOutputs:Array<Float> = brain.feedForward(brainInputs);
-
 				// communicate how to act to the body
 				move(brainOutputs[0]);
 				rotate(brainOutputs[1]);
@@ -296,8 +291,7 @@ class AutoEntity extends Entity {
 				// add bias neuron at the end
 				brainInputs = brainInputs.concat([BIAS]);
 
-				//if (isCamTarget)
-					//trace('sensor inputs:\n${brainInputs}');
+				act();
 			}
 		}
 	}

@@ -3,10 +3,10 @@
 	<!-- _________________________ Application Settings _________________________ -->
 
 	<!-- This var's value can be accessed from code using `var vers = haxe.macro.Compiler.getDefine("PROJECT_VERSION");`-->
-	<set name="PROJECT_VERSION" value="0.0.5" />
+	<set name="PROJECT_VERSION" value="0.0.7" />
 	<haxedef name="PROJECT_VERSION" value="${PROJECT_VERSION}" />
 
-	<app title="MLPAgents" file="MLPAgents" main="Main" version="${GAME_VERSION}" company="Gioele Bencivenga" package="com.haxeflixel.MLPAgents" />
+	<app title="MLPAgents" file="MLPAgents" main="Main" version="${PROJECT_VERSION}" company="Gioele Bencivenga" package="com.haxeflixel.MLPAgents" />
 
 	<!--The flixel preloader is not accurate in Chrome. You can use it regularly if you embed the swf into a html file
 		or you can set the actual size of your file manually at "FlxPreloaderBase-onUpdate-bytesTotal"-->
@@ -18,7 +18,7 @@
 	<!-- ____________________________ Window Settings ___________________________ -->
 
 	<!--These window settings apply to all targets-->
-	<window width="1366" height="768" fps="60" background="#000000" hardware="true" vsync="false" />
+	<window width="1366" height="768" fps="240" background="#000000" hardware="true" vsync="false" />
 
 	<!--HTML5-specific-->
 	<window if="html5" resizable="true" />
