@@ -1,6 +1,6 @@
 # MLPAgents
 
-The previous project "TilemapGen" focused on having entities able to move around and sense the environment.
+The project "TilemapGen" focused on having entities able to move around and sense the environment.
 
 The project "HaxeMLP" focused on having a simple feedforward Multilayer Perceptron.
 
