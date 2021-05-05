@@ -174,14 +174,14 @@ class AutoEntity extends Entity {
 	override function update(elapsed:Float) {
 		if (FlxEcho.updates) {
 			super.update(elapsed);
+
+			act();
 		}
 	}
 
 	function act() {
 		if (brain != null) {
-			// if the brain has the right amount of connections
-			if (brain.connections.length == brain.connectionsCount) {
-				brainReady = true;
+			if (useEnergy(0.6)) { // acting costs energy
 				// decide how to act based on current inputs
 				var brainOutputs:Array<Float> = brain.feedForward(brainInputs);
 				// communicate how to act to the body
@@ -190,8 +190,6 @@ class AutoEntity extends Entity {
 				// controlBite(brainOutputs[2]);
 				// controlDash(brainOutputs[3]);
 			}
-		} else {
-			brainReady = false;
 		}
 	}
 
@@ -202,7 +200,7 @@ class AutoEntity extends Entity {
 	 */
 	function sense() {
 		if (FlxEcho.updates) {
-			if (useEnergy(1.5)) { // sensing and acting costs energy
+			if (useEnergy(0.6)) { // sensing costs energy
 				var sensorInputs = [for (i in 0...SENSORS_INPUTS) 0.];
 				// we need an array of bodies for the linecast
 				var bodiesArray:Array<Body> = [
@@ -290,8 +288,6 @@ class AutoEntity extends Entity {
 
 				// add bias neuron at the end
 				brainInputs = brainInputs.concat([BIAS]);
-
-				act();
 			}
 		}
 	}

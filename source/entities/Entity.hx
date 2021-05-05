@@ -194,6 +194,8 @@ class Entity extends FlxSprite {
 	override function update(elapsed:Float) {
 		super.update(elapsed);
 
+		//body.push()
+
 		/*
 			if (FlxG.keys.pressed.W) {
 				move(0.8);
@@ -229,7 +231,7 @@ class Entity extends FlxSprite {
 	public function move(_moveAmount:Float) {
 		var mappedMoveAmt = HxFuncs.map(_moveAmount, -1, 1, moveRange.start, moveRange.end);
 
-		body.push(mappedMoveAmt, true, ForceType.VELOCITY);
+		body.push(mappedMoveAmt, true, ForceType.POSITION);
 	}
 
 	/**
