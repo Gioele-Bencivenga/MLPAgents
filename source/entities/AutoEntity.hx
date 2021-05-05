@@ -202,7 +202,7 @@ class AutoEntity extends Entity {
 	 */
 	function sense() {
 		if (FlxEcho.updates) {
-			if (useEnergy(0.05)) { // sensing costs 0.05 energy
+			if (useEnergy(1.5)) { // sensing and acting costs energy
 				var sensorInputs = [for (i in 0...SENSORS_INPUTS) 0.];
 				// we need an array of bodies for the linecast
 				var bodiesArray:Array<Body> = [

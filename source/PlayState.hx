@@ -501,12 +501,15 @@ class PlayState extends FlxState {
 								if (ent.biteAmount > 0) { // we are trying to bite
 									var hitEnt = cast(body2.get_object(), AutoEntity);
 									if (hitEnt.biteAmount > 0) { // other entity is biting too
-										if (ent.currEnergy >= hitEnt.currEnergy) {
+										if (ent.body.velocity.length > hitEnt.body.velocity.length) {
 											var chunk = hitEnt.deplete(200);
 											ent.replenishEnergy(chunk);
-										} else {
+										} else if (ent.body.velocity.length < hitEnt.body.velocity.length) {
 											var chunk = ent.deplete(200);
 											hitEnt.replenishEnergy(chunk);
+										} else {
+											ent.deplete(100);
+											hitEnt.deplete(100);
 										}
 									}
 								}

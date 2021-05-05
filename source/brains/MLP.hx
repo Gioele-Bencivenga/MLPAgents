@@ -101,8 +101,10 @@ class MLP {
 			outputOutputs[i] = HxFuncs.tanh(sum);
 		}
 
-		// convert outputLayer range from 0..1 to -1..1
-		outputOutputs = [for (output in outputLayer) HxFuncs.map(output, 0, 1, -1, 1)];
+		// convert outputs range from 0..1 to -1..1
+		for (output in outputOutputs) {
+			HxFuncs.map(output, 0, 1, -1, 1);
+		}
 
 		return outputOutputs;
 	}

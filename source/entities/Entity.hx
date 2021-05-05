@@ -30,6 +30,11 @@ class Entity extends FlxSprite {
 	public static inline final MAX_ROTATION_AMOUNT = 6;
 
 	/**
+	 * The maximum amount that this entity's `age` can reach.
+	 */
+	public static inline final MAX_AGE = 6;
+
+	/**
 	 * Default color of entities on the colorwheel.
 	 */
 	public static inline final BASE_HUE = 60;
@@ -127,6 +132,13 @@ class Entity extends FlxSprite {
 	 */
 	public var energyUsed(default, null):Float;
 
+	/**
+	 * This entity's current age.
+	 * 
+	 * Incremented every `n` seconds, when this variable's value reaches `MAX_AGE` the entity dies.
+	 */
+	var age:Int;
+
 	public function new() {
 		super();
 	}
@@ -145,7 +157,7 @@ class Entity extends FlxSprite {
 		canDash = true;
 
 		var move = 4;
-		moveRange = new FlxRange<Float>(-move, move);
+		moveRange = new FlxRange<Float>(0, move);
 		var rot = MAX_ROTATION_AMOUNT;
 		rotationRange = new FlxRange<Float>(-rot, rot);
 
@@ -172,11 +184,11 @@ class Entity extends FlxSprite {
 		absorption = 10;
 		maxEnergy = 700;
 		currEnergy = maxEnergy;
-
 		fitnessScore = 0;
-		var ft = new FlxTimer().start(1, _ -> {
-			calculateFitness();
-		}, 0);
+		age = 0;
+
+		var fitnessTimer = new FlxTimer().start(1, function(_) calculateFitness(), 0);
+		var ageTimer = new FlxTimer().start(10, function(_) calculateAge(), 0);
 	}
 
 	override function update(elapsed:Float) {
@@ -210,31 +222,25 @@ class Entity extends FlxSprite {
 	}
 
 	/**
-	 * Pushes the entity forward/backward along its axis based on the mapped value of `_moveAmount`, if it has enough energy.
-	 * 
-	 * Also depletes the entity's energy by `_moveAmount`.
+	 * Pushes the entity's `body` forward/backward along its axis based on the mapped value of `_moveAmount`.
 	 * 
 	 * @param _moveAmount how much to move forward or backwards (-1 to 1), and how much energy will be depleted
 	 */
 	public function move(_moveAmount:Float) {
-		if (useEnergy(_moveAmount)) { // if the energy is successfully expended
-			var mappedMoveAmt = HxFuncs.map(_moveAmount, -1, 1, moveRange.start, moveRange.end);
+		var mappedMoveAmt = HxFuncs.map(_moveAmount, -1, 1, moveRange.start, moveRange.end);
 
-			body.push(mappedMoveAmt, true, ForceType.VELOCITY);
-		}
+		body.push(mappedMoveAmt, true, ForceType.VELOCITY);
 	}
 
 	/**
-	 * Rotates a `body` left/right based on the mapped value of `_rotationAmount`.
+	 * Rotates this entity's `body` left/right based on the mapped value of `_rotationAmount`.
 	 * 
 	 * @param _rotationAmount how much to rotate left or right (-1 to 1)
 	 */
 	public function rotate(_rotationAmount:Float) {
-		if (useEnergy(_rotationAmount)) {
-			var mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
+		var mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
 
-			body.rotation += mappedRotationAmt;
-		}
+		body.rotation += mappedRotationAmt;
 	}
 
 	/**
@@ -246,11 +252,7 @@ class Entity extends FlxSprite {
 	 */
 	public function controlBite(_activation:Float) {
 		if (_activation > 0) {
-			if (useEnergy(_activation / 2)) {
-				biteAmount = _activation;
-			} else {
-				biteAmount = 0;
-			}
+			biteAmount = _activation;
 		} else {
 			biteAmount = 0;
 		}
@@ -306,23 +308,19 @@ class Entity extends FlxSprite {
 	/**
 	 * Uses the entity's `currEnergy`, usually to perform an action.
 	 * 
-	 * If enough energy is used `true` is returned and the action goes through.
+	 * If the entity had energy to use `true` is returned and the action goes through.
 	 * 
 	 * @param _energyAmount the amount of energy we want to subtract from `currEnergy`
-	 * @return `true` if the depletion was successful, `false` if there wasn't enough energy to deplete
+	 * @return `true` if the depletion was successful, `false` if the entity had 0 or less energy left
 	 */
 	public function useEnergy(_energyAmount:Float):Bool {
 		_energyAmount = Math.abs(_energyAmount);
 
 		if (currEnergy > 0) {
-			if (currEnergy >= _energyAmount) { // if we have enough energy to deplete
-				currEnergy -= _energyAmount; // deplete by the amount
-				refreshColor();
-				energyUsed += _energyAmount;
-				return true;
-			} else {
-				return false;
-			}
+			currEnergy -= _energyAmount; // deplete by the amount
+			refreshColor();
+			energyUsed += _energyAmount;
+			return true;
 		} else {
 			return false;
 		}
@@ -384,6 +382,34 @@ class Entity extends FlxSprite {
 		}
 
 		return depAmt;
+	}
+
+	/**
+	 * Increases the entity's `age` or kills it for old age if `MAX_AGE` is reached.
+	 * 
+	 * The entity isn't actually killed, rather its `currEnergy` is set to 0 so that it will be swept up by `PlayState.cleanupDeadAgents()`.
+	 */
+	function calculateAge() {
+		if (FlxEcho.updates) {
+			if (currEnergy > 0) {
+				if (age < MAX_AGE) {
+					age++;
+
+					#if debug
+					trace('age incremented to ${age}');
+					#end
+				} else {
+					currEnergy = 0;
+					biteAmount = 0;
+
+					refreshColor();
+
+					#if debug
+					trace('entity died of old age');
+					#end
+				}
+			}
+		}
 	}
 
 	/**
