@@ -677,12 +677,9 @@ class PlayState extends FlxState {
 						newAgent = createAgent(newAgentPos.x, newAgentPos.y, mutatedBrain);
 						// trace('child brain: ${newAgent.brain.connections} len: ${newAgent.brain.connections.length}');
 
-						var resourceAmt = 2;
-						if (resources.countLiving() <= MAX_RESOURCES - 5) {
-							for (i in 0...resourceAmt) {
-								var newResPos = getEmptySpace();
-								createResource(newResPos.x, newResPos.y);
-							}
+						while (resources.countLiving() < MAX_RESOURCES) {
+							var newResPos = getEmptySpace();
+							createResource(newResPos.x, newResPos.y);
 						}
 					}
 				}

@@ -76,7 +76,7 @@ class Supply extends FlxSprite {
 				radius: currAmount / 2
 			},
 			mass: HxFuncs.map(currAmount, 0, MAX_START_AMOUNT, 0, 0.6),
-			drag_length: 200,
+			drag_length: 5,
 			rotational_drag: 60
 		}).bodyType = 3;
 		body = this.get_body();

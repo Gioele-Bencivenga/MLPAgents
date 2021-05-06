@@ -27,7 +27,7 @@ class Entity extends FlxSprite {
 	/**
 	 * Maximum amount that this `Entity` can change its rotation by.
 	 */
-	public static inline final MAX_ROTATION_AMOUNT = 6;
+	public static inline final MAX_ROTATION_AMOUNT = 7;
 
 	/**
 	 * The maximum amount that this entity's `age` can reach.

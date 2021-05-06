@@ -127,10 +127,10 @@ class AutoEntity extends Entity {
 
 		possibleRotations = new FlxRange(0., 0.);
 
-		var rot = 80.;
+		var rot = 60.;
 		setSensorRotations(-rot, rot);
 
-		var lengthVals = [200, 400, 500];
+		var lengthVals = [500, 550, 600];
 		sensorsLengths = [
 			for (i in 0...SENSORS_COUNT) {
 				switch (i) {
@@ -159,7 +159,7 @@ class AutoEntity extends Entity {
 			+ 1 // own velocity neuron
 			+ 1 // own rotation angle neuron
 			+ 1 // own energy level neuron
-			+ BIAS // bias neuron that's always firing 1
+			//+ BIAS // bias neuron that's always firing 1
 			// HIDDEN LAYER
 			, 15 // arbitrary number
 			// OUTPUT LAYER
@@ -287,7 +287,7 @@ class AutoEntity extends Entity {
 				brainInputs = brainInputs.concat([HxFuncs.map(currEnergy, 0, maxEnergy, 0, 1)]);
 
 				// add bias neuron at the end
-				brainInputs = brainInputs.concat([BIAS]);
+				//brainInputs = brainInputs.concat([BIAS]);
 			}
 		}
 	}
