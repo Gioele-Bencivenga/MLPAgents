@@ -157,9 +157,8 @@ class AutoEntity extends Entity {
 
 		brain = new MLP(SENSORS_INPUTS // number of input neurons dedicated to sensors
 			+ 1 // own velocity neuron
-			+ 1 // own rotation angle neuron
+			//+ 1 // own rotation angle neuron
 			+ 1 // own energy level neuron
-			//+ BIAS // bias neuron that's always firing 1
 			// HIDDEN LAYER
 			, 15 // arbitrary number
 			// OUTPUT LAYER
@@ -281,13 +280,10 @@ class AutoEntity extends Entity {
 
 				// add input neuron for current rotation angle
 				// wrap rotation between 0 and 360 (otherwise rotation keeps winding up while spinning)
-				brainInputs = brainInputs.concat([HxFuncs.map(FlxMath.wrap(Std.int(body.rotation), 0, 360), 0, 360, 0, 1)]);
+				//brainInputs = brainInputs.concat([HxFuncs.map(FlxMath.wrap(Std.int(body.rotation), 0, 360), 0, 360, 0, 1)]);
 
 				// add input neuron for current energy level
 				brainInputs = brainInputs.concat([HxFuncs.map(currEnergy, 0, maxEnergy, 0, 1)]);
-
-				// add bias neuron at the end
-				//brainInputs = brainInputs.concat([BIAS]);
 			}
 		}
 	}
