@@ -157,10 +157,9 @@ class AutoEntity extends Entity {
 
 		brain = new MLP(SENSORS_INPUTS // number of input neurons dedicated to sensors
 			//+ 1 // own velocity neuron
-			//+ 1 // own rotation angle neuron
 			+ 1 // own energy level neuron
 			// HIDDEN LAYER
-			, 15 // arbitrary number
+			, 7 // arbitrary number
 			// OUTPUT LAYER
 			, 2 // rotation and movement outputs
 			// + 1 // bite output / AUTO BITE FOR NOW
@@ -232,8 +231,6 @@ class AutoEntity extends Entity {
 							case 1: // hit a wall
 								lineColor = FlxColor.WHITE;
 								sensorInputs[i] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToWall neuron
-							// sensorInputs[i] = HxFuncs.map(hit.closest.distance, 0, sensorsLengths[i], 0,
-							//	1); // maybe this will suggest them to stay away from the wall?
 							case 2: // hit an agent
 								lineColor = FlxColor.ORANGE;
 								sensorInputs[i + SENSORS_COUNT] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToEntity neuron
