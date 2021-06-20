@@ -159,7 +159,7 @@ class AutoEntity extends Entity {
 			//+ 1 // own velocity neuron
 			+ 1 // own energy level neuron
 			// HIDDEN LAYER
-			, 25 // arbitrary number
+			, 32 // arbitrary number
 			// OUTPUT LAYER
 			, 2 // rotation and movement outputs
 			// + 1 // bite output / AUTO BITE FOR NOW
