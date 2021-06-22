@@ -194,7 +194,7 @@ class Entity extends FlxSprite {
 	override function update(elapsed:Float) {
 		super.update(elapsed);
 
-		//body.push()
+		// body.push()
 
 		/*
 			if (FlxG.keys.pressed.W) {
@@ -271,7 +271,7 @@ class Entity extends FlxSprite {
 	public function controlDash(_activation:Float) {
 		if (_activation > 0.5) {
 			if (canDash) {
-				if (useEnergy(100)) { // lots of energy required to dash
+				if (useEnergy(50)) { // lots of energy required to dash
 					body.push(moveRange.end, true, VELOCITY);
 					canDash = false;
 
@@ -404,7 +404,9 @@ class Entity extends FlxSprite {
 					currEnergy = 0;
 					biteAmount = 0;
 
-					refreshColor();
+					color = FlxColor.GREEN;
+
+					PlayState.oldenCounter++;
 
 					#if debug
 					trace('entity died of old age');

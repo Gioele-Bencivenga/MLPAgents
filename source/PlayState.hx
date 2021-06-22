@@ -164,6 +164,21 @@ class PlayState extends FlxState {
 	var deathCounter:Int;
 
 	/**
+	 * Array containing the total number of agents that dies of old age.
+	 * 
+	 * This gets exported for analysis.
+	 */
+	var totalOldData:Array<Int>;
+
+	/**
+	 * Number of agents that died of old age.
+	 * 
+	 * Static because it gets incremented by the entity that reached old age itself. 
+	 * It then gets reset after printing the value on file.
+	 */
+	public static var oldenCounter:Int;
+
+	/**
 	 * Action triggered when we want to turn the graphics on/off.
 	 */
 	var toggleGraphicsAct:FlxActionDigital;
@@ -203,6 +218,8 @@ class PlayState extends FlxState {
 		minFitnessData = [];
 		maxFitnessData = [];
 		avgFitnessData = [];
+		totalOldData = [];
+		oldenCounter = 0;
 
 		toggleGraphicsAct = new FlxActionDigital("toggle_graphics", function(_) toggleGraphics(this));
 		toggleGraphicsAct.addKey(ENTER, JUST_PRESSED);
@@ -314,6 +331,7 @@ class PlayState extends FlxState {
 			}
 		}
 		minFitnessData.push(minFitness);
+
 		// get maximum fitness in agents
 		var maxFitness = 0.;
 		for (agent in agents) {
@@ -324,6 +342,7 @@ class PlayState extends FlxState {
 			}
 		}
 		maxFitnessData.push(maxFitness);
+
 		// get average fitness in agents
 		var avgFitness = 0.;
 		var sum = 0.;
@@ -337,15 +356,22 @@ class PlayState extends FlxState {
 		avgFitness = sum / num;
 		avgFitnessData.push(avgFitness);
 
+		// push current old age deaths and reset counter
+		totalOldData.push(oldenCounter);
+		oldenCounter = 0;
+
+		// print out data to files
 		#if sys
 		var minFilePath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/minFitnessData.txt";
 		var maxFilePath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/maxFitnessData.txt";
 		var avgFilePath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/avgFitnessData.txt";
+		var oldAgeFilePath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/oldAgeData.txt";
 		var deathFilePath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/deathData.txt";
 		try {
 			sys.io.File.saveContent(minFilePath, minFitnessData.join('\n'));
 			sys.io.File.saveContent(maxFilePath, maxFitnessData.join('\n'));
 			sys.io.File.saveContent(avgFilePath, avgFitnessData.join('\n'));
+			sys.io.File.saveContent(oldAgeFilePath, totalOldData.join('\n'));
 			sys.io.File.saveContent(deathFilePath, '${deathCounter}');
 		} catch (e) {
 			trace(e.details());
