@@ -115,6 +115,11 @@ class AutoEntity extends Entity {
 	 */
 	public var brainReady(default, null):Bool = false;
 
+	/**
+	 * Calculating 1/length of genotype (number of connections) is quite slow to do at every reproduction and for every connection, so we calculate the value only once and store it here.
+	 */
+	public var oneOverLength(default, null):Float;
+
 	public function new() {
 		super();
 	}
@@ -156,10 +161,10 @@ class AutoEntity extends Entity {
 		senserTimer.start(SENSORS_REFRESH_RATE, (_) -> sense(), 0);
 
 		brain = new MLP(SENSORS_INPUTS // number of input neurons dedicated to sensors
-			//+ 1 // own velocity neuron
+			// + 1 // own velocity neuron
 			+ 1 // own energy level neuron
 			// HIDDEN LAYER
-			, 32 // arbitrary number
+			, 20 // arbitrary number
 			// OUTPUT LAYER
 			, 2 // rotation and movement outputs
 			// + 1 // bite output / AUTO BITE FOR NOW
@@ -167,6 +172,8 @@ class AutoEntity extends Entity {
 			, _connections);
 
 		brainInputs = [for (i in 0...brain.inputLayerSize) 0];
+
+		oneOverLength = 1 / brain.connections.length;
 	}
 
 	override function update(elapsed:Float) {
@@ -273,11 +280,11 @@ class AutoEntity extends Entity {
 				];
 
 				// add input neurons for current velocity
-				//brainInputs = brainInputs.concat([HxFuncs.map(body.velocity.length, 0, body.max_velocity_length, 0, 1)]);
+				// brainInputs = brainInputs.concat([HxFuncs.map(body.velocity.length, 0, body.max_velocity_length, 0, 1)]);
 
 				// add input neuron for current rotation angle
 				// wrap rotation between 0 and 360 (otherwise rotation keeps winding up while spinning)
-				//brainInputs = brainInputs.concat([HxFuncs.map(FlxMath.wrap(Std.int(body.rotation), 0, 360), 0, 360, 0, 1)]);
+				// brainInputs = brainInputs.concat([HxFuncs.map(FlxMath.wrap(Std.int(body.rotation), 0, 360), 0, 360, 0, 1)]);
 
 				// add input neuron for current energy level
 				brainInputs = brainInputs.concat([HxFuncs.map(currEnergy, 0, maxEnergy, 0, 1)]);

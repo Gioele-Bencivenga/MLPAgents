@@ -527,16 +527,19 @@ class PlayState extends FlxState {
 								if (ent.biteAmount > 0) { // we are trying to bite
 									var hitEnt = cast(body2.get_object(), AutoEntity);
 									if (hitEnt.biteAmount > 0) { // other entity is biting too
-										if (ent.body.velocity.length > hitEnt.body.velocity.length) {
+										if (ent.currEnergy > hitEnt.currEnergy) {
 											var chunk = hitEnt.deplete(200);
 											ent.replenishEnergy(chunk);
-										} else if (ent.body.velocity.length < hitEnt.body.velocity.length) {
+										} else if (ent.currEnergy < hitEnt.currEnergy) {
 											var chunk = ent.deplete(200);
 											hitEnt.replenishEnergy(chunk);
 										} else {
 											ent.deplete(100);
 											hitEnt.deplete(100);
 										}
+									}else{ // other entity is not biting
+										var chunk = hitEnt.deplete(200);
+										ent.replenishEnergy(chunk);
 									}
 								}
 							case 3: // we hit a resource
@@ -673,35 +676,54 @@ class PlayState extends FlxState {
 						}
 						var winner1 = getTournamentWinner(competitors1);
 						var parent1 = winner1;
-						// agents.members.fil
 						var parent2 = FlxG.random.getObject(array);
 						while (parent2 == parent1) {
 							parent2 = FlxG.random.getObject(array);
 						}
-						// trace('parent1: ${parent1.brain.connections} of len: ${parent1.brain.connections.length}\n
-						// parent2: ${parent2.brain.connections} of len: ${parent2.brain.connections.length}');
+						#if debug
+						trace('parent1: ${parent1.brain.connections} of len: ${parent1.brain.connections.length}\n
+						parent2: ${parent2.brain.connections} of len: ${parent2.brain.connections.length}');
+						#end
 
 						var cutPoint = FlxG.random.int(1, parent1.brain.connectionsCount - 1);
 						// trace('cut point: ${cutPoint}');
 						for (i in 0...cutPoint) {
 							parent2.brain.connections[i] = parent1.brain.connections[i];
 						}
-						// trace('crossed brain: ${parent2.brain.connections} len: ${parent2.brain.connections.length}');
+						#if debug
+						trace('crossed brain: ${parent2.brain.connections} len: ${parent2.brain.connections.length}');
+						#end
 
 						// gaussian mutation
-						var mutatedBrain = [for (i in 0...parent2.brain.connections.length) FlxG.random.floatNormal(0, 0.05)];
-						for (i in 0...mutatedBrain.length) {
-							mutatedBrain[i] = mutatedBrain[i] + parent2.brain.connections[i];
-							if (mutatedBrain[i] > 1)
-								mutatedBrain[i] = 1;
-							if (mutatedBrain[i] < -1)
-								mutatedBrain[i] = -1;
+						// for every conn roll a random number, if the number is smaller than 1/length of genotype (mutation rate), apply mutation (0.05 mutation magnitude or even 0.1)
+						var mutatedConnections = [
+							for (i in 0...parent2.brain.connections.length)
+								if (Math.random() < parent2.oneOverLength) {
+									// Math.random();
+									FlxG.random.floatNormal(0, 0.1);
+								} else {
+									0;
+								}
+						];
+						#if debug
+						trace('mutant brain: ${mutatedConnections} len: ${mutatedConnections.length}');
+						#end
+						for (i in 0...mutatedConnections.length) {
+							mutatedConnections[i] = mutatedConnections[i] + parent2.brain.connections[i];
+							if (mutatedConnections[i] > 1)
+								mutatedConnections[i] = 1;
+							if (mutatedConnections[i] < -1)
+								mutatedConnections[i] = -1;
 						}
-						// trace('mutant brain: ${mutatedBrain} len: ${mutatedBrain.length}');
+						#if debug
+						trace('mutant brain1: ${mutatedConnections} len: ${mutatedConnections.length}');
+						#end
 
 						var newAgentPos = getEmptySpace();
-						newAgent = createAgent(newAgentPos.x, newAgentPos.y, mutatedBrain);
-						// trace('child brain: ${newAgent.brain.connections} len: ${newAgent.brain.connections.length}');
+						newAgent = createAgent(newAgentPos.x, newAgentPos.y, mutatedConnections);
+						#if debug
+						trace('child brain: ${newAgent.brain.connections} len: ${newAgent.brain.connections.length}');
+						#end
 
 						while (resources.countLiving() < MAX_RESOURCES) {
 							var newResPos = getEmptySpace();

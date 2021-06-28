@@ -32,7 +32,7 @@ class Entity extends FlxSprite {
 	/**
 	 * The maximum amount that this entity's `age` can reach.
 	 */
-	public static inline final MAX_AGE = 6;
+	public static inline final MAX_AGE = 10;
 
 	/**
 	 * Default color of entities on the colorwheel.
