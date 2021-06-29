@@ -161,14 +161,13 @@ class AutoEntity extends Entity {
 		senserTimer.start(SENSORS_REFRESH_RATE, (_) -> sense(), 0);
 
 		brain = new MLP(SENSORS_INPUTS // number of input neurons dedicated to sensors
-			// + 1 // own velocity neuron
 			+ 1 // own energy level neuron
 			// HIDDEN LAYER
 			, 20 // arbitrary number
 			// OUTPUT LAYER
 			, 2 // rotation and movement outputs
-			+ 1 // bite output / AUTO BITE FOR NOW
-			+ 1 // dash output
+			//+ 1 // bite output / AUTO BITE FOR NOW
+			//+ 1 // dash output
 			, _connections);
 
 		brainInputs = [for (i in 0...brain.inputLayerSize) 0];
@@ -192,8 +191,8 @@ class AutoEntity extends Entity {
 				// communicate how to act to the body
 				move(brainOutputs[0]);
 				rotate(brainOutputs[1]);
-				controlBite(brainOutputs[2]);
-				controlDash(brainOutputs[3]);
+				//controlBite(brainOutputs[2]);
+				//controlDash(brainOutputs[3]);
 			}
 		}
 	}
@@ -279,14 +278,7 @@ class AutoEntity extends Entity {
 						input
 				];
 
-				// add input neurons for current velocity
-				// brainInputs = brainInputs.concat([HxFuncs.map(body.velocity.length, 0, body.max_velocity_length, 0, 1)]);
-
-				// add input neuron for current rotation angle
-				// wrap rotation between 0 and 360 (otherwise rotation keeps winding up while spinning)
-				// brainInputs = brainInputs.concat([HxFuncs.map(FlxMath.wrap(Std.int(body.rotation), 0, 360), 0, 360, 0, 1)]);
-
-				// add input neuron for current energy level
+				// add input neuron for current own energy level
 				brainInputs = brainInputs.concat([HxFuncs.map(currEnergy, 0, maxEnergy, 0, 1)]);
 			}
 		}
