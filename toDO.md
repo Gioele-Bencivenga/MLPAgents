@@ -22,3 +22,5 @@ Old age
 - Write down a test plan (what values you're gonna measure, then measure ecc).
 - Tests you have done so far belong in preliminary testing, don't ignore them.
 - Write down updated table of values, outlining how you've done reproduction, who gets chosen and why, mutated by how much, how many resources and rate of replenishing ecc..
+
+try slower agents when full of energy (fat)

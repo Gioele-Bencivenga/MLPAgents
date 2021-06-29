@@ -167,8 +167,8 @@ class AutoEntity extends Entity {
 			, 20 // arbitrary number
 			// OUTPUT LAYER
 			, 2 // rotation and movement outputs
-			// + 1 // bite output / AUTO BITE FOR NOW
-			// + 1 // dash output
+			+ 1 // bite output / AUTO BITE FOR NOW
+			+ 1 // dash output
 			, _connections);
 
 		brainInputs = [for (i in 0...brain.inputLayerSize) 0];
@@ -192,8 +192,8 @@ class AutoEntity extends Entity {
 				// communicate how to act to the body
 				move(brainOutputs[0]);
 				rotate(brainOutputs[1]);
-				// controlBite(brainOutputs[2]);
-				// controlDash(brainOutputs[3]);
+				controlBite(brainOutputs[2]);
+				controlDash(brainOutputs[3]);
 			}
 		}
 	}
