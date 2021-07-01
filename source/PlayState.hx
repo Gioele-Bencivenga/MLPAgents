@@ -19,7 +19,6 @@ import utilities.HxFuncs;
 import entities.AutoEntity;
 import supplies.Supply;
 import flixel.math.FlxMath;
-import flixel.addons.display.FlxZoomCamera;
 import haxe.ui.containers.menus.MenuItem;
 import haxe.ui.core.Component;
 import haxe.ui.macros.ComponentMacros;
@@ -120,7 +119,7 @@ class PlayState extends FlxState {
 	/**
 	 * Simulation camera, the camera displaying the simulation.
 	 */
-	public static var simCam:FlxZoomCamera;
+	public static var simCam:FlxCamera;
 
 	/**
 	 * UI camera, the camera displaying the interface indipendently from zoom.
@@ -231,7 +230,7 @@ class PlayState extends FlxState {
 	function setupCameras() {
 		/// SETUP
 		var cam = FlxG.camera;
-		simCam = new FlxZoomCamera(Std.int(cam.x), Std.int(cam.y), cam.width, cam.height, cam.zoom); // create the simulation camera
+		simCam = new FlxCamera(Std.int(cam.x), Std.int(cam.y), cam.width, cam.height, cam.zoom); // create the simulation camera
 		FlxG.cameras.reset(simCam); // dump all current cameras and set the simulation camera as the main one
 
 		uiCam = new FlxCamera(0, 0, FlxG.width, FlxG.height); // create the ui camera
@@ -239,9 +238,6 @@ class PlayState extends FlxState {
 		FlxG.cameras.add(uiCam); // add it to the cameras list (simCam doesn't need because we set it as the main already)
 
 		/// CUSTOMIZATION
-		simCam.zoomSpeed = 8;
-		simCam.targetZoom = 1.2;
-		simCam.zoomMargin = 0.2;
 		simCam.bgColor.setRGB(25, 21, 0);
 	}
 
@@ -425,13 +421,14 @@ class PlayState extends FlxState {
 	function sld_zoom_onChange(_) {
 		var slider = uiView.findComponent("sld_zoom", Slider);
 
-		simCam.targetZoom = HxFuncs.map(slider.pos, slider.min, slider.max, CAM_MIN_ZOOM, CAM_MAX_ZOOM);
+		simCam.zoom = HxFuncs.map(slider.pos, slider.min, slider.max, CAM_MIN_ZOOM, CAM_MAX_ZOOM);
 	}
 
 	function generateCaveTilemap() {
 		// instantiate generator and generate the level
 		var gen = new Generator(80, 130);
-		var levelData:Array<Array<Int>> = gen.generateCave(0.06, 2, 2, 2);
+		// var levelData:Array<Array<Int>> = gen.generateCave(0.06, 2, 2, 2);
+		var levelData:Array<Array<Int>> = gen.generateCave();
 
 		// reset the groups before filling them again
 		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], agents, resources);
@@ -527,17 +524,17 @@ class PlayState extends FlxState {
 								if (ent.biteAmount > 0) { // we are trying to bite
 									var hitEnt = cast(body2.get_object(), AutoEntity);
 									if (hitEnt.biteAmount > 0) { // other entity is biting too
-										if (ent.currEnergy > hitEnt.currEnergy) {
+										if (ent.currEnergy < hitEnt.currEnergy) { // hungrier agent bites
 											var chunk = hitEnt.deplete(200);
 											ent.replenishEnergy(chunk);
-										} else if (ent.currEnergy < hitEnt.currEnergy) {
+										} else if (ent.currEnergy > hitEnt.currEnergy) {
 											var chunk = ent.deplete(200);
 											hitEnt.replenishEnergy(chunk);
 										} else {
 											ent.deplete(100);
 											hitEnt.deplete(100);
 										}
-									}else{ // other entity is not biting
+									} else { // other entity is not biting
 										var chunk = hitEnt.deplete(200);
 										ent.replenishEnergy(chunk);
 									}
@@ -551,19 +548,22 @@ class PlayState extends FlxState {
 							case any: // we hit anything else
 								// do nothing
 						}
-					case 3: // we are a resource
-						switch (body2.bodyType) {
-							case 2: // we hit an entity
-								var ent = cast(body2.get_object(), AutoEntity);
-								if (ent.biteAmount > 0) { // entity is biting
-									var res = cast(body1.get_object(), Supply);
-									var chunk = res.deplete(ent.bite * (ent.biteAmount * 2));
+					/*
+						case 3: // we are a resource
+							switch (body2.bodyType) {
+								case 2: // we hit an entity
+									var ent = cast(body2.get_object(), AutoEntity);
+									if (ent.biteAmount > 0) { // entity is biting
+										var res = cast(body1.get_object(), Supply);
+										var chunk = res.deplete(ent.bite * (ent.biteAmount * 2));
 
-									ent.replenishEnergy(chunk * ent.absorption);
-								}
-							case any: // we hit anything else
-								// do nothing
-						}
+										ent.replenishEnergy(chunk * ent.absorption);
+									}
+								case any: // we hit anything else
+									// do nothing
+							}
+					 */
+
 					case any: // we are anything else
 						// do nothing
 				}

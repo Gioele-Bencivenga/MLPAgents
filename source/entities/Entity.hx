@@ -69,7 +69,7 @@ class Entity extends FlxSprite {
 	var rotationRange:FlxRange<Float>;
 
 	/**
-	 * Maximum amount of `energy` this entity has.
+	 * Maximum amount of `energy` this entity can have.
 	 */
 	public var maxEnergy(default, null):Float;
 
@@ -156,7 +156,7 @@ class Entity extends FlxSprite {
 		canBeDepleted = true;
 		canDash = true;
 
-		var move = 4;
+		var move = 2;
 		moveRange = new FlxRange<Float>(0, move);
 		var rot = MAX_ROTATION_AMOUNT;
 		rotationRange = new FlxRange<Float>(-rot, rot);
@@ -226,10 +226,12 @@ class Entity extends FlxSprite {
 	/**
 	 * Pushes the entity's `body` forward/backward along its axis based on the mapped value of `_moveAmount`.
 	 * 
-	 * @param _moveAmount how much to move forward or backwards (-1 to 1), and how much energy will be depleted
+	 * @param _moveAmount how much to move forward or backwards (-1 to 1)
 	 */
 	public function move(_moveAmount:Float) {
 		var mappedMoveAmt = HxFuncs.map(_moveAmount, -1, 1, moveRange.start, moveRange.end);
+
+		mappedMoveAmt += HxFuncs.map(currEnergy, 0, maxEnergy, 6, 0);
 
 		body.push(mappedMoveAmt, true, ForceType.POSITION);
 	}
