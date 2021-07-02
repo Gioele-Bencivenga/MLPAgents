@@ -548,21 +548,19 @@ class PlayState extends FlxState {
 							case any: // we hit anything else
 								// do nothing
 						}
-					/*
-						case 3: // we are a resource
-							switch (body2.bodyType) {
-								case 2: // we hit an entity
-									var ent = cast(body2.get_object(), AutoEntity);
-									if (ent.biteAmount > 0) { // entity is biting
-										var res = cast(body1.get_object(), Supply);
-										var chunk = res.deplete(ent.bite * (ent.biteAmount * 2));
+					case 3: // we are a resource
+						switch (body2.bodyType) {
+							case 2: // we hit an entity
+								var ent = cast(body2.get_object(), AutoEntity);
+								if (ent.biteAmount > 0) { // entity is biting
+									var res = cast(body1.get_object(), Supply);
+									var chunk = res.deplete(ent.bite * (ent.biteAmount * 2));
 
-										ent.replenishEnergy(chunk * ent.absorption);
-									}
-								case any: // we hit anything else
-									// do nothing
-							}
-					 */
+									ent.replenishEnergy(chunk * ent.absorption);
+								}
+							case any: // we hit anything else
+								// do nothing
+						}
 
 					case any: // we are anything else
 						// do nothing
@@ -794,7 +792,7 @@ class PlayState extends FlxState {
 	 * 
 	 * If no bodies are found the position is returned.
 	 */
-	function getEmptySpace(_lineLength:Float = 120, _lineAmt:Int = 10) {
+	function getEmptySpace(_lineLength:Float = 200, _lineAmt:Int = 8) {
 		var foundEmptySpace = false;
 		var emptyPosition = new Vector2(50, 50);
 		do {
