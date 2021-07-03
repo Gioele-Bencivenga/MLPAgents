@@ -75,7 +75,7 @@ class PlayState extends FlxState {
 	/**
 	 * Maximum number of resources that can be in the simulation at any time.
 	 */
-	public static inline final MAX_RESOURCES:Int = 90;
+	public static inline final MAX_RESOURCES:Int = 65;
 
 	/**
 	 * Whether we want to draw the sensors for all agents or not.
@@ -722,13 +722,13 @@ class PlayState extends FlxState {
 						#if debug
 						trace('child brain: ${newAgent.brain.connections} len: ${newAgent.brain.connections.length}');
 						#end
-
-						while (resources.countLiving() < MAX_RESOURCES) {
-							var newResPos = getEmptySpace();
-							createResource(newResPos.x, newResPos.y);
-						}
 					}
 				}
+			}
+
+			while (resources.countLiving() < MAX_RESOURCES) {
+				var newResPos = getEmptySpace();
+				createResource(newResPos.x, newResPos.y);
 			}
 
 			if (simCam.target.alive == false) {
