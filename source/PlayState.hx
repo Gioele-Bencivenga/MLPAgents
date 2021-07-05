@@ -75,7 +75,7 @@ class PlayState extends FlxState {
 	/**
 	 * Maximum number of resources that can be in the simulation at any time.
 	 */
-	public static inline final MAX_RESOURCES:Int = 65;
+	public static inline final MAX_RESOURCES:Int = 80;
 
 	/**
 	 * Whether we want to draw the sensors for all agents or not.
@@ -428,7 +428,7 @@ class PlayState extends FlxState {
 		// instantiate generator and generate the level
 		var gen = new Generator(80, 130);
 		// var levelData:Array<Array<Int>> = gen.generateCave(0.06, 2, 2, 2);
-		var levelData:Array<Array<Int>> = gen.generateCave();
+		var levelData:Array<Array<Int>> = gen.generateCave(0.2, 2, 3, 5);
 
 		// reset the groups before filling them again
 		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], agents, resources);
@@ -530,9 +530,15 @@ class PlayState extends FlxState {
 										} else if (ent.currEnergy > hitEnt.currEnergy) {
 											var chunk = ent.deplete(200);
 											hitEnt.replenishEnergy(chunk);
-										} else {
-											ent.deplete(100);
-											hitEnt.deplete(100);
+										} else { // same hungriness
+											// fastest one bites
+											if (ent.body.velocity.length >= hitEnt.body.velocity.length) {
+												var chunk = hitEnt.deplete(200);
+												ent.replenishEnergy(chunk);
+											} else if (ent.body.velocity.length < hitEnt.body.velocity.length) {
+												var chunk = ent.deplete(200);
+												hitEnt.replenishEnergy(chunk);
+											}
 										}
 									} else { // other entity is not biting
 										var chunk = hitEnt.deplete(200);
