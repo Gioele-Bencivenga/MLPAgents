@@ -99,13 +99,6 @@ class Entity extends FlxSprite {
 	public var biteAmount(default, null):Float;
 
 	/**
-	 * How much this entity "bites".
-	 * 
-	 * Which is the amount we deplete from the resource/entity when biting it.
-	 */
-	public var bite(default, null):Float;
-
-	/**
 	 * Multiplier applied to the amount of energy this entity eats.
 	 * 
 	 * Higher absorption means the entity will get more energy from the same amount of resource.
@@ -180,7 +173,6 @@ class Entity extends FlxSprite {
 		energyEaten = 0;
 		energyUsed = 0;
 		biteAmount = 0.9;
-		bite = 8;
 		absorption = 10;
 		maxEnergy = 700;
 		currEnergy = maxEnergy;

@@ -548,7 +548,7 @@ class PlayState extends FlxState {
 							case 3: // we hit a resource
 								if (ent.biteAmount > 0) { // we are trying to bite
 									var res = cast(body2.get_object(), Supply); // grasp the resource
-									var chunk = res.deplete(ent.bite * (ent.biteAmount * 2)); // bite a chunk out of it
+									var chunk = res.deplete(20); // bite a chunk out of it
 									ent.replenishEnergy(chunk * ent.absorption); // eat it
 								}
 							case any: // we hit anything else
@@ -560,7 +560,7 @@ class PlayState extends FlxState {
 								var ent = cast(body2.get_object(), AutoEntity);
 								if (ent.biteAmount > 0) { // entity is biting
 									var res = cast(body1.get_object(), Supply);
-									var chunk = res.deplete(ent.bite * (ent.biteAmount * 2));
+									var chunk = res.deplete(20);
 
 									ent.replenishEnergy(chunk * ent.absorption);
 								}
