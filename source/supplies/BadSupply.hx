@@ -1,18 +1,14 @@
 package supplies;
 
-import PlayState;
-import flixel.util.FlxColor;
 import utilities.HxFuncs;
 import echo.Body;
 import flixel.FlxG;
 import flixel.FlxSprite;
+import flixel.util.FlxColor;
 
 using echo.FlxEcho;
 
-/**
- * A Supply class that can be depleted via the `hurt()` function and that modifies its dimensions according to its quantity (represented by the `health` variable).
- */
-class Supply extends FlxSprite {
+class BadSupply extends FlxSprite {
 	/**
 	 * Maximum amount that any resource can start from when created.
 	 */
@@ -40,7 +36,7 @@ class Supply extends FlxSprite {
 	/**
 	 * Initializes the resource.
 	 */
-	public function init(_x:Float, _y:Float, _minStartAmt:Int = 40, _maxStartAmt:Int = MAX_START_AMOUNT, _bodyType:Int = 3) {
+	public function init(_x:Float, _y:Float, _minStartAmt:Int = 40, _maxStartAmt:Int = MAX_START_AMOUNT, _bodyType:Int = 4) {
 		x = _x;
 		y = _y;
 
@@ -48,7 +44,7 @@ class Supply extends FlxSprite {
 		currAmount = startAmount;
 
 		makeGraphic(Std.int(currAmount), Std.int(currAmount), FlxColor.WHITE);
-		color = FlxColor.MAGENTA;
+		color = FlxColor.GREEN;
 
 		this.add_body({
 			shape: {
@@ -104,7 +100,7 @@ class Supply extends FlxSprite {
 	 * Killing this object will also remove its physics body.
 	 */
 	override function kill() {
-		PlayState.eatenResources++;
+		PlayState.eatenBadResources++;
 		this.remove_from_group(PlayState.collidableBodies);
 		this.remove_from_group(PlayState.entitiesCollGroup);
 		body.remove_body();

@@ -1,5 +1,6 @@
 package;
 
+import supplies.BadSupply;
 import flixel.FlxBasic;
 import flixel.input.actions.FlxActionManager;
 import flixel.input.actions.FlxAction.FlxActionDigital;
@@ -75,7 +76,12 @@ class PlayState extends FlxState {
 	/**
 	 * Maximum number of resources that can be in the simulation at any time.
 	 */
-	public static inline final MAX_RESOURCES:Int = 80;
+	public static inline final MAX_RESOURCES:Int = 60;
+
+	/**
+	 * Maximum number of bad resources that can be in the simulation at any time.
+	 */
+	public static inline final MAX_BAD_RESOURCES:Int = 40;
 
 	/**
 	 * Whether we want to draw the sensors for all agents or not.
@@ -115,6 +121,25 @@ class PlayState extends FlxState {
 	 * Typed group of our resources in the world.
 	 */
 	public static var resources:FlxTypedGroup<Supply>;
+
+	/**
+	 * Typed group of our bad resources in the world.
+	 */
+	public static var badResources:FlxTypedGroup<BadSupply>;
+
+	/**
+	 * The number of resources that have been eaten.
+	 * Used to decide how many resources to periodically create.
+	 * Reset after creating new resources.
+	 */
+	public static var eatenResources:Int;
+
+	/**
+	 * The number of bad resources that have been eaten.
+	 * Used to decide how many bad resources to periodically create.
+	 * Reset after creating new bad resources.
+	 */
+	public static var eatenBadResources:Int;
 
 	/**
 	 * Simulation camera, the camera displaying the simulation.
@@ -178,6 +203,16 @@ class PlayState extends FlxState {
 	public static var oldenCounter:Int;
 
 	/**
+	 * Number of eaten resources for each fitness print.
+	 */
+	var eatenResData:Array<Int>;
+
+	/**
+	 * Number of eaten bad resources for each fitness print.
+	 */
+	var eatenBadResData:Array<Int>;
+
+	/**
 	 * Action triggered when we want to turn the graphics on/off.
 	 */
 	var toggleGraphicsAct:FlxActionDigital;
@@ -210,7 +245,7 @@ class PlayState extends FlxState {
 
 		var t1 = new FlxTimer().start(10, function(_) cleanupDeadAgents(), 0);
 
-		var t2 = new FlxTimer().start(60, function(_) printFitness(), 0);
+		// var t2 = new FlxTimer().start(60, function(_) printFitness(), 0);
 
 		this.visible = false;
 
@@ -219,12 +254,17 @@ class PlayState extends FlxState {
 		avgFitnessData = [];
 		totalOldData = [];
 		oldenCounter = 0;
+		eatenResData = [];
+		eatenBadResData = [];
 
 		toggleGraphicsAct = new FlxActionDigital("toggle_graphics", function(_) toggleGraphics(this));
 		toggleGraphicsAct.addKey(ENTER, JUST_PRESSED);
 		actionManager = new FlxActionManager();
 		actionManager.addActions([toggleGraphicsAct]);
 		FlxG.inputs.add(actionManager);
+
+		eatenResources = 0;
+		eatenBadResources = 0;
 	}
 
 	function setupCameras() {
@@ -256,6 +296,7 @@ class PlayState extends FlxState {
 		/// OTHER GROUPS
 		collidableBodies = new FlxGroup();
 		resources = new FlxTypedGroup<Supply>(MAX_RESOURCES);
+		badResources = new FlxTypedGroup<BadSupply>(MAX_BAD_RESOURCES);
 		agents = new FlxTypedGroup<AutoEntity>(MAX_AGENTS);
 	}
 
@@ -292,7 +333,7 @@ class PlayState extends FlxState {
 	}
 
 	function btn_clearWorld_onClick(_) {
-		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], agents, resources);
+		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], agents, resources, badResources);
 		// destroy world
 		if (FlxEcho.instance != null)
 			FlxEcho.clear();
@@ -356,18 +397,26 @@ class PlayState extends FlxState {
 		totalOldData.push(oldenCounter);
 		oldenCounter = 0;
 
+		// push eaten resources number
+		eatenResData.push(eatenResources);
+		eatenBadResData.push(eatenBadResources);
+
 		// print out data to files
 		#if sys
 		var minFilePath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/minFitnessData.txt";
 		var maxFilePath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/maxFitnessData.txt";
 		var avgFilePath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/avgFitnessData.txt";
 		var oldAgeFilePath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/oldAgeData.txt";
+		var eatenResPath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/eatenResData.txt";
+		var eatenBadResPath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/eatenBadResData.txt";
 		var deathFilePath = "C:/Users/gioel/Documents/Repositories/GitHub/MLPAgents/MLPAgents/assets/data/deathData.txt";
 		try {
 			sys.io.File.saveContent(minFilePath, minFitnessData.join('\n'));
 			sys.io.File.saveContent(maxFilePath, maxFitnessData.join('\n'));
 			sys.io.File.saveContent(avgFilePath, avgFitnessData.join('\n'));
 			sys.io.File.saveContent(oldAgeFilePath, totalOldData.join('\n'));
+			sys.io.File.saveContent(eatenResPath, eatenResData.join('\n'));
+			sys.io.File.saveContent(eatenBadResPath, eatenBadResData.join('\n'));
 			sys.io.File.saveContent(deathFilePath, '${deathCounter}');
 		} catch (e) {
 			trace(e.details());
@@ -428,10 +477,10 @@ class PlayState extends FlxState {
 		// instantiate generator and generate the level
 		var gen = new Generator(80, 130);
 		// var levelData:Array<Array<Int>> = gen.generateCave(0.06, 2, 2, 2);
-		var levelData:Array<Array<Int>> = gen.generateCave(0.2, 2, 3, 5);
+		var levelData:Array<Array<Int>> = gen.generateCave(0.17, 2, 3, 5);
 
 		// reset the groups before filling them again
-		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], agents, resources);
+		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], agents, resources, badResources);
 
 		// destroy previous world
 		if (FlxEcho.instance != null)
@@ -476,26 +525,48 @@ class PlayState extends FlxState {
 		canvas.cameras = [simCam];
 		add(canvas);
 
-		/// ENTITIES
-		for (j in 0...levelData.length) { // step through level data and stuff
-			for (i in 0...levelData[j].length) {
-				switch (levelData[j][i]) {
-					case 2:
-						// not used right now
-						createAgent(i * TILE_SIZE, j * TILE_SIZE);
-					case 3:
-						createResource(i * TILE_SIZE, j * TILE_SIZE);
-					default:
-						continue;
-				}
-			}
-		}
-
+		#if debug
+		var agn = 0;
+		#end
 		// add agents
 		for (i in 0...AGENTS_COUNT) {
 			var pos = getEmptySpace();
 			createAgent(pos.x, pos.y);
+			#if debug
+			agn++;
+			#end
 		}
+		#if debug
+		trace('agents created: $agn');
+		#end
+
+		#if debug
+		var rsn = 0;
+		#end
+		for (i in 0...MAX_RESOURCES) {
+			var pos = getEmptySpace();
+			createResource(pos.x, pos.y);
+			#if debug
+			rsn++;
+			#end
+		}
+		#if debug
+		trace('resources created: $rsn');
+		#end
+
+		#if debug
+		var brn = 0;
+		#end
+		for (i in 0...MAX_BAD_RESOURCES) {
+			var pos = getEmptySpace();
+			createBadResource(pos.x, pos.y);
+			#if debug
+			brn++;
+			#end
+		}
+		#if debug
+		trace('bad resources created: $brn');
+		#end
 
 		/// COLLISIONS
 		entitiesCollGroup.listen(terrainCollGroup, {
@@ -551,6 +622,13 @@ class PlayState extends FlxState {
 									var chunk = res.deplete(20); // bite a chunk out of it
 									ent.replenishEnergy(chunk * ent.absorption); // eat it
 								}
+							case 4: // we hit a bad resource
+								if (ent.biteAmount > 0) { // we are trying to bite
+									var res = cast(body2.get_object(), BadSupply); // grasp the resource
+									var chunk = res.deplete(20); // bite a chunk out of it
+									ent.replenishEnergy(chunk * ent.absorption); // eat it
+									ent.getPoisoned(); // suffer the effects of the bad food
+								}
 							case any: // we hit anything else
 								// do nothing
 						}
@@ -567,7 +645,19 @@ class PlayState extends FlxState {
 							case any: // we hit anything else
 								// do nothing
 						}
-
+					case 4: // we are a bad resources
+						switch (body2.bodyType) {
+							case 2: // we hit an entity
+								var ent = cast(body2.get_object(), AutoEntity);
+								if (ent.biteAmount > 0) { // entity is biting
+									var res = cast(body1.get_object(), BadSupply); // grasp the resource
+									var chunk = res.deplete(20); // bite a chunk out of it
+									ent.replenishEnergy(chunk * ent.absorption); // eat it
+									ent.getPoisoned(); // suffer the effects of the bad food
+								}
+							case any: // we hit anything else
+								// do nothing
+						}
 					case any: // we are anything else
 						// do nothing
 				}
@@ -626,7 +716,8 @@ class PlayState extends FlxState {
 	 * @param _groupsToEmpty an array containing the `FlxGroup`s that you want to reset.
 	 * @param _typedGroups need to empty some `FlxTypedGroup<AutoEntity>` too?
 	 */
-	function emptyGroups(_groupsToEmpty:Array<FlxGroup>, ?_agentGroup:FlxTypedGroup<AutoEntity>, ?_resGroup:FlxTypedGroup<Supply>) {
+	function emptyGroups(_groupsToEmpty:Array<FlxGroup>, ?_agentGroup:FlxTypedGroup<AutoEntity>, ?_resGroup:FlxTypedGroup<Supply>,
+			?_badResGroup:FlxTypedGroup<BadSupply>) {
 		for (group in _groupsToEmpty) {
 			group.kill();
 			group.clear();
@@ -732,10 +823,39 @@ class PlayState extends FlxState {
 				}
 			}
 
-			while (resources.countLiving() < MAX_RESOURCES) {
+			printFitness();
+
+			for (i in 0...MAX_RESOURCES) {
 				var newResPos = getEmptySpace();
 				createResource(newResPos.x, newResPos.y);
 			}
+			eatenResources = 0;
+
+			#if debug
+			var alr = 0;
+			for (i in 0...resources.length) {
+				if (resources.members[i].alive) {
+					alr++;
+				}
+			}
+			trace('alive resources: $alr');
+			#end
+
+			for (i in 0...MAX_BAD_RESOURCES) {
+				var newResPos = getEmptySpace();
+				createBadResource(newResPos.x, newResPos.y);
+			}
+			eatenBadResources = 0;
+
+			#if debug
+			var albr = 0;
+			for (i in 0...badResources.length) {
+				if (badResources.members[i].alive) {
+					albr++;
+				}
+			}
+			trace('alive resources: $albr');
+			#end
 
 			if (simCam.target.alive == false) {
 				setCameraTargetAgent(newAgent);
@@ -791,6 +911,19 @@ class PlayState extends FlxState {
 		newRes.add_to_group(collidableBodies); // add to bodies visible by sensors
 		newRes.add_to_group(entitiesCollGroup); // add to bodies that should collide
 		resources.add(newRes); // add to recycling group
+	}
+
+	/**
+	 * Creates a new bad resource and adds it to the appropriate groups.
+	 * @param _x x position of new resource
+	 * @param _y y position of new resource
+	 */
+	function createBadResource(_x:Float, _y:Float) {
+		var newBadRes = badResources.recycle(BadSupply.new); // recycle
+		newBadRes.init(_x, _y); // initialise values
+		newBadRes.add_to_group(collidableBodies); // add to bodies visible by sensors
+		newBadRes.add_to_group(entitiesCollGroup); // add to bodies that should collide
+		badResources.add(newBadRes); // add to recycling group
 	}
 
 	/**

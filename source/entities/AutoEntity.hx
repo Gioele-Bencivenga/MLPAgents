@@ -1,5 +1,6 @@
 package entities;
 
+import supplies.BadSupply;
 import flixel.FlxG;
 import supplies.Supply;
 import echo.data.Data.Intersection;
@@ -32,15 +33,16 @@ class AutoEntity extends Entity {
 	 * - distanceToWall `0..1` distance to wall hit by sensor
 	 * - distanceToEntity `0..1` distance to entity hit by sensor
 	 * - distanceToResource `0..1` distance to resource hit by sensor
+	 * - distanceToBadResource `0..1` distance to bad resource hit by sensor
 	 * 
 	 * Shorter distance = higher activation and vice versa.
 	 * 
 	 * - entityEnergy `0..1` the amount of energy of the hit entity (if any)
-	 * - supplyAmount `0..1` the amount of the hit resource (if any)
+	 * - supplyAmount `0..1` the amount of the hit (bad?) resource (if any)
 	 * 
 	 * Higher amount = higher activation and vice versa.
 	 */
-	public static inline final SENSORS_INPUTS:Int = SENSORS_COUNT * 5;
+	public static inline final SENSORS_INPUTS:Int = SENSORS_COUNT * 6;
 
 	/**
 	 * How often the sensors are cast.
@@ -111,11 +113,6 @@ class AutoEntity extends Entity {
 	var brainInputs:Array<Float>;
 
 	/**
-	 * If this entity's brain has been initialized.
-	 */
-	public var brainReady(default, null):Bool = false;
-
-	/**
 	 * Calculating 1/length of genotype (number of connections) is quite slow to do at every reproduction and for every connection, so we calculate the value only once and store it here.
 	 */
 	public var oneOverLength(default, null):Float;
@@ -127,7 +124,7 @@ class AutoEntity extends Entity {
 	/**
 	 * Initialise the Entity by creating sensors, adding body, creating brain ecc..
 	 */
-	override public function init(_x:Float, _y:Float, _width:Int, _height:Int, ?_connections:Array<Float>) {
+	override public function init(_x:Float, _y:Float, _width:Int, _height:Int, ?_connections:Array<Float>, _bodyType:Int = 2) {
 		super.init(_x, _y, _width, _height);
 
 		possibleRotations = new FlxRange(0., 0.);
@@ -163,11 +160,11 @@ class AutoEntity extends Entity {
 		brain = new MLP(SENSORS_INPUTS // number of input neurons dedicated to sensors
 			+ 1 // own energy level neuron
 			// HIDDEN LAYER
-			, 15 // arbitrary number
+			, 20 // arbitrary number
 			// OUTPUT LAYER
 			, 2 // rotation and movement outputs
-			//+ 1 // bite output / AUTO BITE FOR NOW
-			//+ 1 // dash output
+			// + 1 // bite output / AUTO BITE
+			// + 1 // dash output
 			, _connections);
 
 		brainInputs = [for (i in 0...brain.inputLayerSize) 0];
@@ -191,8 +188,8 @@ class AutoEntity extends Entity {
 				// communicate how to act to the body
 				move(brainOutputs[0]);
 				rotate(brainOutputs[1]);
-				//controlBite(brainOutputs[2]);
-				//controlDash(brainOutputs[3]);
+				// controlBite(brainOutputs[2]);
+				// controlDash(brainOutputs[3]);
 			}
 		}
 	}
@@ -235,27 +232,39 @@ class AutoEntity extends Entity {
 						var lineColor = FlxColor.RED;
 						switch (hit.body.bodyType) {
 							case 1: // hit a wall
-								lineColor = FlxColor.WHITE;
+								if (isCamTarget)
+									lineColor = FlxColor.WHITE;
 								sensorInputs[i] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToWall neuron
 							case 2: // hit an agent
-								lineColor = FlxColor.ORANGE;
+								if (isCamTarget)
+									lineColor = FlxColor.ORANGE;
 								sensorInputs[i + SENSORS_COUNT] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToEntity neuron
 								var agent = cast(hit.body.get_object(), AutoEntity);
 								sensorInputs[i + (SENSORS_COUNT * 2)] = HxFuncs.map(agent.currEnergy, 0, agent.maxEnergy, 0,
 									1); // put agent's energy amount in entityEnergy neuron
 							case 3: // hit a resource
-								lineColor = FlxColor.MAGENTA;
+								if (isCamTarget)
+									lineColor = FlxColor.MAGENTA;
 								sensorInputs[i + (SENSORS_COUNT * 3)] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToResource neuron
 								var supp = cast(hit.body.get_object(), Supply);
-								sensorInputs[i + (SENSORS_COUNT * 4)] = HxFuncs.map(supp.currAmount, 0, Supply.MAX_START_AMOUNT, 0,
+								sensorInputs[i + (SENSORS_COUNT * 5)] = HxFuncs.map(supp.currAmount, 0, Supply.MAX_START_AMOUNT, 0,
 									1); // put supply's amount in supplyAmount neuron
+							case 4: // hit a bad resource
+								if (isCamTarget)
+									lineColor = FlxColor.GREEN;
+								sensorInputs[i + (SENSORS_COUNT * 4)] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToBadResource neuron
+								var badSupp = cast(hit.body.get_object(), BadSupply);
+								sensorInputs[i + (SENSORS_COUNT * 5)] = HxFuncs.map(badSupp.currAmount, 0, BadSupply.MAX_START_AMOUNT, 0,
+									1); // put bad supply's amount in supplyAmount neuron
 							case unknown: // hit unknown
-								lineColor = FlxColor.BROWN;
+								if (isCamTarget)
+									lineColor = FlxColor.BROWN;
 								sensorInputs[i] = 0;
 								sensorInputs[i + SENSORS_COUNT] = 0;
 								sensorInputs[i + (SENSORS_COUNT * 2)] = 0;
 								sensorInputs[i + (SENSORS_COUNT * 3)] = 0;
 								sensorInputs[i + (SENSORS_COUNT * 4)] = 0;
+								sensorInputs[i + (SENSORS_COUNT * 5)] = 0;
 						}
 						if (isCamTarget)
 							DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y, lineColor, 2);
@@ -266,6 +275,7 @@ class AutoEntity extends Entity {
 						sensorInputs[i + (SENSORS_COUNT * 2)] = 0;
 						sensorInputs[i + (SENSORS_COUNT * 3)] = 0;
 						sensorInputs[i + (SENSORS_COUNT * 4)] = 0;
+						sensorInputs[i + (SENSORS_COUNT * 5)] = 0;
 
 						if (isCamTarget)
 							DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y);
@@ -331,7 +341,6 @@ class AutoEntity extends Entity {
 	}
 
 	override function kill() {
-		brainReady = false;
 		if (senserTimer != null) {
 			if (senserTimer.active) {
 				senserTimer.cancel();

@@ -3,7 +3,6 @@ package entities;
 import echo.data.Types.ForceType;
 import PlayState;
 import flixel.util.FlxTimer;
-import flixel.tweens.FlxTween;
 import flixel.util.FlxColor;
 import utilities.HxFuncs;
 import flixel.util.helpers.FlxRange;
@@ -132,6 +131,11 @@ class Entity extends FlxSprite {
 	 */
 	var age:Int;
 
+	/**
+	 * Timer used for the poison effect.
+	 */
+	var poisonTimer:FlxTimer;
+
 	public function new() {
 		super();
 	}
@@ -139,7 +143,7 @@ class Entity extends FlxSprite {
 	/**
 	 * Initialise the Entity by adding body, setting color and values.
 	 */
-	public function init(_x:Float, _y:Float, _width:Int, _height:Int, ?_connections:Array<Float>) {
+	public function init(_x:Float, _y:Float, _width:Int, _height:Int, ?_connections:Array<Float>, _bodyType:Int = 2) {
 		x = _x;
 		y = _y;
 		makeGraphic(_width, _height, FlxColor.WHITE);
@@ -161,12 +165,9 @@ class Entity extends FlxSprite {
 				width: _width,
 				height: _height
 			},
-			mass: 0.3,
-			drag_length: 50,
-			rotational_drag: 50,
 			max_velocity_length: MAX_VELOCITY,
 			max_rotational_velocity: MAX_ROTATIONAL_VELOCITY,
-		}).bodyType = 2; // info used by environment sensors
+		}).bodyType = _bodyType; // info used by environment sensors
 		body = this.get_body();
 		body.rotation = FlxG.random.int(0, 360);
 
@@ -181,6 +182,7 @@ class Entity extends FlxSprite {
 
 		var fitnessTimer = new FlxTimer().start(1, function(_) calculateFitness(), 0);
 		var ageTimer = new FlxTimer().start(10, function(_) calculateAge(), 0);
+		poisonTimer = new FlxTimer();
 	}
 
 	override function update(elapsed:Float) {
@@ -380,6 +382,13 @@ class Entity extends FlxSprite {
 		return depAmt;
 	}
 
+	public function getPoisoned() {
+		if (poisonTimer.active) {
+			poisonTimer.cancel();
+		}
+		poisonTimer.start(0.5, function(_) deplete(20), 20);
+	}
+
 	/**
 	 * Increases the entity's `age` or kills it for old age if `MAX_AGE` is reached.
 	 * 
@@ -414,6 +423,7 @@ class Entity extends FlxSprite {
 	 * Killing this object will also remove its physics body.
 	 */
 	override function kill() {
+		poisonTimer.cancel();
 		this.remove_from_group(PlayState.collidableBodies);
 		this.remove_from_group(PlayState.entitiesCollGroup);
 		body.remove_body();
