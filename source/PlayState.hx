@@ -76,12 +76,12 @@ class PlayState extends FlxState {
 	/**
 	 * Maximum number of resources that can be in the simulation at any time.
 	 */
-	public static inline final MAX_RESOURCES:Int = 60;
+	public static inline final MAX_RESOURCES:Int = 70;
 
 	/**
 	 * Maximum number of bad resources that can be in the simulation at any time.
 	 */
-	public static inline final MAX_BAD_RESOURCES:Int = 40;
+	public static inline final MAX_BAD_RESOURCES:Int = 30;
 
 	/**
 	 * Whether we want to draw the sensors for all agents or not.
@@ -598,18 +598,9 @@ class PlayState extends FlxState {
 										if (ent.currEnergy < hitEnt.currEnergy) { // hungrier agent bites
 											var chunk = hitEnt.deplete(200);
 											ent.replenishEnergy(chunk);
-										} else if (ent.currEnergy > hitEnt.currEnergy) {
+										} else if (ent.currEnergy >= hitEnt.currEnergy) {
 											var chunk = ent.deplete(200);
 											hitEnt.replenishEnergy(chunk);
-										} else { // same hungriness
-											// fastest one bites
-											if (ent.body.velocity.length >= hitEnt.body.velocity.length) {
-												var chunk = hitEnt.deplete(200);
-												ent.replenishEnergy(chunk);
-											} else if (ent.body.velocity.length < hitEnt.body.velocity.length) {
-												var chunk = ent.deplete(200);
-												hitEnt.replenishEnergy(chunk);
-											}
 										}
 									} else { // other entity is not biting
 										var chunk = hitEnt.deplete(200);

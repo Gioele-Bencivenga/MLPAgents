@@ -163,7 +163,7 @@ class AutoEntity extends Entity {
 			, 20 // arbitrary number
 			// OUTPUT LAYER
 			, 2 // rotation and movement outputs
-			// + 1 // bite output / AUTO BITE
+			// + 1 // bite output
 			// + 1 // dash output
 			, _connections);
 

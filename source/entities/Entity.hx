@@ -188,9 +188,7 @@ class Entity extends FlxSprite {
 	override function update(elapsed:Float) {
 		super.update(elapsed);
 
-		// body.push()
-
-		/*
+		/* control the entity yourself
 			if (FlxG.keys.pressed.W) {
 				move(0.8);
 			} else if (FlxG.keys.pressed.S) {
@@ -384,9 +382,10 @@ class Entity extends FlxSprite {
 
 	public function getPoisoned() {
 		if (poisonTimer.active) {
-			poisonTimer.cancel();
+			poisonTimer.loops += 2;
+		} else {
+			poisonTimer.start(0.5, function(_) deplete(100), 2);
 		}
-		poisonTimer.start(0.5, function(_) deplete(20), 20);
 	}
 
 	/**
