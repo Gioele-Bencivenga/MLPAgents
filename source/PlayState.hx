@@ -924,7 +924,7 @@ class PlayState extends FlxState {
 	 */
 	function getEmptySpace(_lineLength:Float = 200, _lineAmt:Int = 8) {
 		var foundEmptySpace = false;
-		var emptyPosition = new Vector2(50, 50);
+		var emptyPosition = new Vector2(1, 1);
 		do {
 			// we need an array of bodies for the linecast, sometimes its shape will be null and an exception will be thrown
 			var bodiesArray:Array<Body> = [
@@ -939,14 +939,20 @@ class PlayState extends FlxState {
 
 			var hitBody:Bool = false;
 			var line = Line.get();
-			for (i in 0..._lineAmt) {
+			/*for (i in 0..._lineAmt) {
 				line.set_from_vector(emptyPosition, 360 * (i / _lineAmt), _lineLength);
 				var result = line.linecast(bodiesArray);
 				if (result != null) {
 					hitBody = true;
 				}
 				line.put();
+			}*/
+			line.set_from_vector(emptyPosition, 0, 400);
+			var result = line.linecast(bodiesArray);
+			if (result != null) {
+				hitBody = true;
 			}
+			line.put();
 
 			if (hitBody == true) {
 				foundEmptySpace = false;
