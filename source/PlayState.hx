@@ -616,7 +616,7 @@ class PlayState extends FlxState {
 							case 4: // we hit a bad resource
 								if (ent.biteAmount > 0) { // we are trying to bite
 									var res = cast(body2.get_object(), BadSupply); // grasp the resource
-									var chunk = res.deplete(20); // bite a chunk out of it
+									var chunk = res.deplete(10); // bite a chunk out of it
 									ent.replenishEnergy(chunk * ent.absorption); // eat it
 									ent.getPoisoned(); // suffer the effects of the bad food
 								}
@@ -642,7 +642,7 @@ class PlayState extends FlxState {
 								var ent = cast(body2.get_object(), AutoEntity);
 								if (ent.biteAmount > 0) { // entity is biting
 									var res = cast(body1.get_object(), BadSupply); // grasp the resource
-									var chunk = res.deplete(20); // bite a chunk out of it
+									var chunk = res.deplete(10); // bite a chunk out of it
 									ent.replenishEnergy(chunk * ent.absorption); // eat it
 									ent.getPoisoned(); // suffer the effects of the bad food
 								}
@@ -922,7 +922,7 @@ class PlayState extends FlxState {
 	 * 
 	 * If no bodies are found the position is returned.
 	 */
-	function getEmptySpace(_lineLength:Float = 200, _lineAmt:Int = 8) {
+	function getEmptySpace(_lineLength:Float = 400) {
 		var foundEmptySpace = false;
 		var emptyPosition = new Vector2(1, 1);
 		do {
@@ -947,10 +947,12 @@ class PlayState extends FlxState {
 				}
 				line.put();
 			}*/
-			line.set_from_vector(emptyPosition, 0, 400);
-			var result = line.linecast(bodiesArray);
-			if (result != null) {
-				hitBody = true;
+			for (i in 0...2) {
+				line.set_from_vector(emptyPosition, i * 90, _lineLength);
+				var result = line.linecast(bodiesArray);
+				if (result != null) {
+					hitBody = true;
+				}
 			}
 			line.put();
 

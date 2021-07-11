@@ -384,7 +384,7 @@ class Entity extends FlxSprite {
 		if (poisonTimer.active) {
 			poisonTimer.loops += 2;
 		} else {
-			poisonTimer.start(0.5, function(_) deplete(100), 2);
+			poisonTimer.start(0.5, function(_) deplete(100), 3);
 		}
 	}
 
