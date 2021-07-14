@@ -31,7 +31,7 @@ class Entity extends FlxSprite {
 	/**
 	 * The maximum amount that this entity's `age` can reach.
 	 */
-	public static inline final MAX_AGE = 10;
+	public static inline final MAX_AGE = 8;
 
 	/**
 	 * Default color of entities on the colorwheel.
@@ -156,7 +156,7 @@ class Entity extends FlxSprite {
 		var move = 2;
 		moveRange = new FlxRange<Float>(0, move);
 		var rot = MAX_ROTATION_AMOUNT;
-		rotationRange = new FlxRange<Float>(-rot, rot);
+		rotationRange = new FlxRange<Float>(0, rot);
 
 		/// BODY
 		this.add_body({
@@ -229,14 +229,29 @@ class Entity extends FlxSprite {
 	}
 
 	/**
-	 * Rotates this entity's `body` left/right based on the mapped value of `_rotationAmount`.
+	 * Rotates this entity's `body` left based on the mapped value of `_rotationAmount`.
 	 * 
-	 * @param _rotationAmount how much to rotate left or right (-1 to 1)
+	 * @param _rotationAmount how much to rotate left (-1 to 1)
 	 */
-	public function rotate(_rotationAmount:Float) {
-		var mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
+	public function rotateL(_rotationAmount:Float) {
+		var mappedRotationAmt = 0.;
+		//if (_rotationAmount > 0) {
+			mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
+			body.rotation -= mappedRotationAmt;
+		//}
+	}
 
-		body.rotation += mappedRotationAmt;
+	/**
+	 * Rotates this entity's `body` right based on the mapped value of `_rotationAmount`.
+	 * 
+	 * @param _rotationAmount how much to rotate right (-1 to 1)
+	 */
+	public function rotateR(_rotationAmount:Float) {
+		var mappedRotationAmt = 0.;
+		//if (_rotationAmount > 0) {
+			mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
+			body.rotation += mappedRotationAmt;
+		//}
 	}
 
 	/**
@@ -384,7 +399,7 @@ class Entity extends FlxSprite {
 		if (poisonTimer.active) {
 			poisonTimer.loops += 2;
 		} else {
-			poisonTimer.start(0.5, function(_) deplete(100), 3);
+			poisonTimer.start(1, function(_) deplete(200), 3);
 		}
 	}
 

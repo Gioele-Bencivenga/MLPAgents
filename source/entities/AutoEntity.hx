@@ -160,11 +160,11 @@ class AutoEntity extends Entity {
 		brain = new MLP(SENSORS_INPUTS // number of input neurons dedicated to sensors
 			+ 1 // own energy level neuron
 			// HIDDEN LAYER
-			, 20 // arbitrary number
+			, 25 // arbitrary number
 			// OUTPUT LAYER
-			, 2 // rotation and movement outputs
+			, 1 // movement output
+			+ 2 // left/right rotation outputs
 			// + 1 // bite output
-			// + 1 // dash output
 			, _connections);
 
 		brainInputs = [for (i in 0...brain.inputLayerSize) 0];
@@ -187,9 +187,9 @@ class AutoEntity extends Entity {
 				var brainOutputs:Array<Float> = brain.feedForward(brainInputs);
 				// communicate how to act to the body
 				move(brainOutputs[0]);
-				rotate(brainOutputs[1]);
-				// controlBite(brainOutputs[2]);
-				// controlDash(brainOutputs[3]);
+				rotateL(brainOutputs[1]);
+				rotateR(brainOutputs[2]);
+				// controlBite(brainOutputs[3]);
 			}
 		}
 	}

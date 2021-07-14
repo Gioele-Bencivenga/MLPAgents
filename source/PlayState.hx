@@ -616,8 +616,8 @@ class PlayState extends FlxState {
 							case 4: // we hit a bad resource
 								if (ent.biteAmount > 0) { // we are trying to bite
 									var res = cast(body2.get_object(), BadSupply); // grasp the resource
-									var chunk = res.deplete(10); // bite a chunk out of it
-									ent.replenishEnergy(chunk * ent.absorption); // eat it
+									var chunk = res.deplete(20); // bite a chunk out of it
+									ent.replenishEnergy(chunk); // eat it without metabolising it well
 									ent.getPoisoned(); // suffer the effects of the bad food
 								}
 							case any: // we hit anything else
