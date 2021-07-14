@@ -642,7 +642,7 @@ class PlayState extends FlxState {
 								var ent = cast(body2.get_object(), AutoEntity);
 								if (ent.biteAmount > 0) { // entity is biting
 									var res = cast(body1.get_object(), BadSupply); // grasp the resource
-									var chunk = res.deplete(10); // bite a chunk out of it
+									var chunk = res.deplete(20); // bite a chunk out of it
 									ent.replenishEnergy(chunk * ent.absorption); // eat it
 									ent.getPoisoned(); // suffer the effects of the bad food
 								}

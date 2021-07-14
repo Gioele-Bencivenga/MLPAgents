@@ -153,7 +153,7 @@ class Entity extends FlxSprite {
 		canBeDepleted = true;
 		canDash = true;
 
-		var move = 2;
+		var move = 3;
 		moveRange = new FlxRange<Float>(0, move);
 		var rot = MAX_ROTATION_AMOUNT;
 		rotationRange = new FlxRange<Float>(-rot, rot);
@@ -223,7 +223,7 @@ class Entity extends FlxSprite {
 	public function move(_moveAmount:Float) {
 		var mappedMoveAmt = HxFuncs.map(_moveAmount, -1, 1, moveRange.start, moveRange.end);
 
-		mappedMoveAmt += HxFuncs.map(currEnergy, 0, maxEnergy, 6, 0);
+		mappedMoveAmt += HxFuncs.map(currEnergy, 0, maxEnergy, 4, 0);
 
 		body.push(mappedMoveAmt, true, ForceType.POSITION);
 	}
@@ -399,7 +399,8 @@ class Entity extends FlxSprite {
 		if (poisonTimer.active) {
 			poisonTimer.loops += 2;
 		} else {
-			poisonTimer.start(1, function(_) deplete(200), 3);
+			deplete(50);
+			poisonTimer.start(0.5, function(_) deplete(200), 3);
 		}
 	}
 
