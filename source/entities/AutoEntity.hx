@@ -37,12 +37,12 @@ class AutoEntity extends Entity {
 	 * 
 	 * Shorter distance = higher activation and vice versa.
 	 * 
-	 * - entityEnergy `0..1` the amount of energy of the hit entity (if any)
-	 * - supplyAmount `0..1` the amount of the hit (bad?) resource (if any)
+	 * //- entityEnergy `0..1` the amount of energy of the hit entity (if any)
+	 * //- supplyAmount `0..1` the amount of the hit (bad?) resource (if any)
 	 * 
 	 * Higher amount = higher activation and vice versa.
 	 */
-	public static inline final SENSORS_INPUTS:Int = SENSORS_COUNT * 6;
+	public static inline final SENSORS_INPUTS:Int = SENSORS_COUNT * 4;
 
 	/**
 	 * How often the sensors are cast.
@@ -239,44 +239,47 @@ class AutoEntity extends Entity {
 								sensorInputs[i + SENSORS_COUNT] = 0;
 								sensorInputs[i + (SENSORS_COUNT * 2)] = 0;
 								sensorInputs[i + (SENSORS_COUNT * 3)] = 0;
-								sensorInputs[i + (SENSORS_COUNT * 4)] = 0;
-								sensorInputs[i + (SENSORS_COUNT * 5)] = 0;
+							// sensorInputs[i + (SENSORS_COUNT * 4)] = 0;
+							// sensorInputs[i + (SENSORS_COUNT * 5)] = 0;
 							case 2: // hit an agent
 								if (isCamTarget)
 									lineColor = FlxColor.ORANGE;
 								sensorInputs[i + SENSORS_COUNT] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToEntity neuron
-								var agent = cast(hit.body.get_object(), AutoEntity);
-								sensorInputs[i + (SENSORS_COUNT * 2)] = HxFuncs.map(agent.currEnergy, 0, agent.maxEnergy, 0,
-									1); // put agent's energy amount in entityEnergy neuron
+								// var agent = cast(hit.body.get_object(), AutoEntity);
+								// sensorInputs[i + (SENSORS_COUNT * 2)] = HxFuncs.map(agent.currEnergy, 0, agent.maxEnergy, 0,
+								//	1); // put agent's energy amount in entityEnergy neuron
 								// all others are 0
 								sensorInputs[i] = 0;
+								// sensorInputs[i + SENSORS_COUNT] = 0;
+								sensorInputs[i + SENSORS_COUNT * 2] = 0;
 								sensorInputs[i + (SENSORS_COUNT * 3)] = 0;
-								sensorInputs[i + (SENSORS_COUNT * 4)] = 0;
-								sensorInputs[i + (SENSORS_COUNT * 5)] = 0;
+							// sensorInputs[i + (SENSORS_COUNT * 4)] = 0;
+							// sensorInputs[i + (SENSORS_COUNT * 5)] = 0;
 							case 3: // hit a resource
 								if (isCamTarget)
 									lineColor = FlxColor.MAGENTA;
-								sensorInputs[i + (SENSORS_COUNT * 3)] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToResource neuron
-								var supp = cast(hit.body.get_object(), Supply);
-								sensorInputs[i + (SENSORS_COUNT * 5)] = HxFuncs.map(supp.currAmount, 0, Supply.MAX_START_AMOUNT, 0,
-									1); // put supply's amount in supplyAmount neuron
+								sensorInputs[i + (SENSORS_COUNT * 2)] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToResource neuron
+								// var supp = cast(hit.body.get_object(), Supply);
+								// sensorInputs[i + (SENSORS_COUNT * 5)] = HxFuncs.map(supp.currAmount, 0, Supply.MAX_START_AMOUNT, 0,
+								//	1); // put supply's amount in supplyAmount neuron
 								// all others are 0
 								sensorInputs[i] = 0;
 								sensorInputs[i + SENSORS_COUNT] = 0;
-								sensorInputs[i + (SENSORS_COUNT * 2)] = 0;
-								sensorInputs[i + (SENSORS_COUNT * 4)] = 0;
+								// sensorInputs[i + (SENSORS_COUNT * 2)] = 0;
+								sensorInputs[i + (SENSORS_COUNT * 3)] = 0;
+							// sensorInputs[i + (SENSORS_COUNT * 4)] = 0;
 							case 4: // hit a bad resource
 								if (isCamTarget)
 									lineColor = FlxColor.GREEN;
-								sensorInputs[i + (SENSORS_COUNT * 4)] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToBadResource neuron
-								var badSupp = cast(hit.body.get_object(), BadSupply);
-								sensorInputs[i + (SENSORS_COUNT * 5)] = HxFuncs.map(badSupp.currAmount, 0, BadSupply.MAX_START_AMOUNT, 0,
-									1); // put bad supply's amount in supplyAmount neuron
+								sensorInputs[i + (SENSORS_COUNT * 3)] = invDistanceTo(hit, sensorsLengths[i]); // put distance in distanceToBadResource neuron
+								// var badSupp = cast(hit.body.get_object(), BadSupply);
+								// sensorInputs[i + (SENSORS_COUNT * 5)] = HxFuncs.map(badSupp.currAmount, 0, BadSupply.MAX_START_AMOUNT, 0,
+								//	1); // put bad supply's amount in supplyAmount neuron
 								// all others 0
 								sensorInputs[i] = 0;
 								sensorInputs[i + SENSORS_COUNT] = 0;
 								sensorInputs[i + (SENSORS_COUNT * 2)] = 0;
-								sensorInputs[i + (SENSORS_COUNT * 3)] = 0;
+							// sensorInputs[i + (SENSORS_COUNT * 3)] = 0;
 							case unknown: // hit unknown
 								if (isCamTarget)
 									lineColor = FlxColor.BROWN;
@@ -285,8 +288,8 @@ class AutoEntity extends Entity {
 								sensorInputs[i + SENSORS_COUNT] = 0;
 								sensorInputs[i + (SENSORS_COUNT * 2)] = 0;
 								sensorInputs[i + (SENSORS_COUNT * 3)] = 0;
-								sensorInputs[i + (SENSORS_COUNT * 4)] = 0;
-								sensorInputs[i + (SENSORS_COUNT * 5)] = 0;
+								// sensorInputs[i + (SENSORS_COUNT * 4)] = 0;
+								// sensorInputs[i + (SENSORS_COUNT * 5)] = 0;
 						}
 						if (isCamTarget)
 							DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y, lineColor, 2);
@@ -296,8 +299,8 @@ class AutoEntity extends Entity {
 						sensorInputs[i + SENSORS_COUNT] = 0;
 						sensorInputs[i + (SENSORS_COUNT * 2)] = 0;
 						sensorInputs[i + (SENSORS_COUNT * 3)] = 0;
-						sensorInputs[i + (SENSORS_COUNT * 4)] = 0;
-						sensorInputs[i + (SENSORS_COUNT * 5)] = 0;
+						// sensorInputs[i + (SENSORS_COUNT * 4)] = 0;
+						// sensorInputs[i + (SENSORS_COUNT * 5)] = 0;
 
 						if (isCamTarget)
 							DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y);
