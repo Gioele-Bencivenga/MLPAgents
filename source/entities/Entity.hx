@@ -156,7 +156,7 @@ class Entity extends FlxSprite {
 		var move = 2;
 		moveRange = new FlxRange<Float>(0, move);
 		var rot = MAX_ROTATION_AMOUNT;
-		rotationRange = new FlxRange<Float>(0, rot);
+		rotationRange = new FlxRange<Float>(-rot, rot);
 
 		/// BODY
 		this.add_body({
