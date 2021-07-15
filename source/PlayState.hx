@@ -76,12 +76,12 @@ class PlayState extends FlxState {
 	/**
 	 * Maximum number of resources that can be in the simulation at any time.
 	 */
-	public static inline final MAX_RESOURCES:Int = 70;
+	public static inline final MAX_RESOURCES:Int = 60;
 
 	/**
 	 * Maximum number of bad resources that can be in the simulation at any time.
 	 */
-	public static inline final MAX_BAD_RESOURCES:Int = 30;
+	public static inline final MAX_BAD_RESOURCES:Int = 60;
 
 	/**
 	 * Whether we want to draw the sensors for all agents or not.
@@ -592,19 +592,21 @@ class PlayState extends FlxState {
 						var ent = cast(body1.get_object(), AutoEntity);
 						switch (body2.bodyType) {
 							case 2: // we hit an entity
-								if (ent.biteAmount > 0) { // we are trying to bite
-									var hitEnt = cast(body2.get_object(), AutoEntity);
-									if (hitEnt.biteAmount > 0) { // other entity is biting too
-										if (ent.currEnergy < hitEnt.currEnergy) { // hungrier agent bites
-											var chunk = hitEnt.deplete(200);
-											ent.replenishEnergy(chunk);
-										} else if (ent.currEnergy >= hitEnt.currEnergy) {
-											var chunk = ent.deplete(200);
-											hitEnt.replenishEnergy(chunk);
+								if (ent.currEnergy > 0) { // we are not dead
+									if (ent.biteAmount > 0) { // we are trying to bite
+										var hitEnt = cast(body2.get_object(), AutoEntity);
+										if (hitEnt.biteAmount > 0) { // other entity is biting too
+											if (ent.currEnergy < hitEnt.currEnergy) { // hungrier agent bites
+												var chunk = hitEnt.deplete(400);
+												ent.replenishEnergy(chunk / 1.25);
+											} else if (ent.currEnergy >= hitEnt.currEnergy) {
+												var chunk = ent.deplete(400);
+												hitEnt.replenishEnergy(chunk / 1.25);
+											}
+										} else { // other entity is not biting
+											var chunk = hitEnt.deplete(400);
+											ent.replenishEnergy(chunk / 1.25);
 										}
-									} else { // other entity is not biting
-										var chunk = hitEnt.deplete(200);
-										ent.replenishEnergy(chunk);
 									}
 								}
 							case 3: // we hit a resource
@@ -627,11 +629,13 @@ class PlayState extends FlxState {
 						switch (body2.bodyType) {
 							case 2: // we hit an entity
 								var ent = cast(body2.get_object(), AutoEntity);
-								if (ent.biteAmount > 0) { // entity is biting
-									var res = cast(body1.get_object(), Supply);
-									var chunk = res.deplete(20);
+								if (ent.currEnergy > 0) { // entity is alive
+									if (ent.biteAmount > 0) { // entity is biting
+										var res = cast(body1.get_object(), Supply);
+										var chunk = res.deplete(20);
 
-									ent.replenishEnergy(chunk * ent.absorption);
+										ent.replenishEnergy(chunk * ent.absorption);
+									}
 								}
 							case any: // we hit anything else
 								// do nothing
@@ -640,11 +644,13 @@ class PlayState extends FlxState {
 						switch (body2.bodyType) {
 							case 2: // we hit an entity
 								var ent = cast(body2.get_object(), AutoEntity);
-								if (ent.biteAmount > 0) { // entity is biting
-									var res = cast(body1.get_object(), BadSupply); // grasp the resource
-									var chunk = res.deplete(20); // bite a chunk out of it
-									ent.replenishEnergy(chunk * ent.absorption); // eat it
-									ent.getPoisoned(); // suffer the effects of the bad food
+								if (ent.currEnergy > 0) { // entity is alive
+									if (ent.biteAmount > 0) { // entity is biting
+										var res = cast(body1.get_object(), BadSupply); // grasp the resource
+										var chunk = res.deplete(20); // bite a chunk out of it
+										ent.replenishEnergy(chunk); // eat it without metabolising it well
+										ent.getPoisoned(); // suffer the effects of the bad food
+									}
 								}
 							case any: // we hit anything else
 								// do nothing
