@@ -182,7 +182,7 @@ class AutoEntity extends Entity {
 
 	function act() {
 		if (brain != null) {
-			if (useEnergy(0.6)) { // acting costs energy
+			if (useEnergy(0.4)) { // acting costs energy
 				// decide how to act based on current inputs
 				var brainOutputs:Array<Float> = brain.feedForward(brainInputs);
 				// communicate how to act to the body
@@ -190,6 +190,8 @@ class AutoEntity extends Entity {
 				rotateL(brainOutputs[1]);
 				rotateR(brainOutputs[2]);
 				// controlBite(brainOutputs[3]);
+			} else {
+				currEnergy = 0;
 			}
 		}
 	}
@@ -201,7 +203,7 @@ class AutoEntity extends Entity {
 	 */
 	function sense() {
 		if (FlxEcho.updates) {
-			if (useEnergy(0.6)) { // sensing costs energy
+			if (useEnergy(0.4)) { // sensing costs energy
 				var sensorInputs = [for (i in 0...SENSORS_INPUTS) 0.];
 				// we need an array of bodies for the linecast
 				var bodiesArray:Array<Body> = [
@@ -315,6 +317,8 @@ class AutoEntity extends Entity {
 
 				// add input neuron for current own energy level
 				brainInputs = brainInputs.concat([HxFuncs.map(currEnergy, 0, maxEnergy, 0, 1)]);
+			} else {
+				currEnergy = 0;
 			}
 		}
 	}

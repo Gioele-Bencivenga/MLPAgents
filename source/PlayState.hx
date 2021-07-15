@@ -597,14 +597,14 @@ class PlayState extends FlxState {
 										var hitEnt = cast(body2.get_object(), AutoEntity);
 										if (hitEnt.biteAmount > 0) { // other entity is biting too
 											if (ent.currEnergy < hitEnt.currEnergy) { // hungrier agent bites
-												var chunk = hitEnt.deplete(400);
+												var chunk = hitEnt.deplete(100);
 												ent.replenishEnergy(chunk / 1.25);
 											} else if (ent.currEnergy >= hitEnt.currEnergy) {
-												var chunk = ent.deplete(400);
+												var chunk = ent.deplete(100);
 												hitEnt.replenishEnergy(chunk / 1.25);
 											}
 										} else { // other entity is not biting
-											var chunk = hitEnt.deplete(400);
+											var chunk = hitEnt.deplete(100);
 											ent.replenishEnergy(chunk / 1.25);
 										}
 									}
@@ -791,8 +791,7 @@ class PlayState extends FlxState {
 						var mutatedConnections = [
 							for (i in 0...parent2.brain.connections.length)
 								if (Math.random() < parent2.oneOverLength) {
-									// Math.random();
-									FlxG.random.floatNormal(0, 0.1);
+									FlxG.random.floatNormal(0, 0.05);
 								} else {
 									0;
 								}

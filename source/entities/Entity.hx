@@ -120,11 +120,6 @@ class Entity extends FlxSprite {
 	public var energyEaten(default, null):Float;
 
 	/**
-	 * The amount of energy this entity has used up until its death.
-	 */
-	public var energyUsed(default, null):Float;
-
-	/**
 	 * This entity's current age.
 	 * 
 	 * Incremented every `n` seconds, when this variable's value reaches `MAX_AGE` the entity dies.
@@ -172,7 +167,6 @@ class Entity extends FlxSprite {
 		body.rotation = FlxG.random.int(0, 360);
 
 		energyEaten = 0;
-		energyUsed = 0;
 		biteAmount = 0.9;
 		absorption = 10;
 		maxEnergy = 700;
@@ -330,7 +324,6 @@ class Entity extends FlxSprite {
 		if (currEnergy > 0) {
 			currEnergy -= _energyAmount; // deplete by the amount
 			refreshColor();
-			energyUsed += _energyAmount;
 			return true;
 		} else {
 			return false;
