@@ -425,20 +425,22 @@ class PlayState extends FlxState {
 	}
 
 	function savePopulation() {
-		var header = "ID;fitness;energy_eaten;energy_used;connections";
-		var lines:Array<String> = [''];
-		for (i in 0...agents.length) {
-			if (agents.members[i] != null) {
-				lines.push('${agents.members[i].body.id};${agents.members[i].fitnessScore};${agents.members[i].energyEaten};${agents.members[i].energyUsed};${agents.members[i].brain.connections}');
-			}
-		}
-		var linesAsString = '';
-		for (i in 0...lines.length) {
-			linesAsString = lines.join('\n');
-		}
-		var csvString = '${header}\n${linesAsString}';
-		var csv = xa3.Csv.fromString("agents_pop", csvString);
-		trace('generated csv:\n${csv}');
+		/*
+			var header = "ID;fitness;energy_eaten;energy_used;connections";
+				var lines:Array<String> = [''];
+				for (i in 0...agents.length) {
+					if (agents.members[i] != null) {
+						lines.push('${agents.members[i].body.id};${agents.members[i].fitnessScore};${agents.members[i].energyEaten};${agents.members[i].energyUsed};${agents.members[i].brain.connections}');
+					}
+				}
+				var linesAsString = '';
+				for (i in 0...lines.length) {
+					linesAsString = lines.join('\n');
+				}
+				var csvString = '${header}\n${linesAsString}';
+				var csv = xa3.Csv.fromString("agents_pop", csvString);
+				trace('generated csv:\n${csv}');
+		 */
 	}
 
 	function link_website_onClick(_) {

@@ -34,6 +34,11 @@ class Entity extends FlxSprite {
 	public static inline final MAX_AGE = 8;
 
 	/**
+	 * The age value at which an entity is considered old.
+	 */
+	public static inline final OLD_AGE = 6;
+
+	/**
 	 * Default color of entities on the colorwheel.
 	 */
 	public static inline final BASE_HUE = 60;
@@ -229,10 +234,10 @@ class Entity extends FlxSprite {
 	 */
 	public function rotateL(_rotationAmount:Float) {
 		var mappedRotationAmt = 0.;
-		//if (_rotationAmount > 0) {
-			mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
-			body.rotation -= mappedRotationAmt;
-		//}
+		// if (_rotationAmount > 0) {
+		mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
+		body.rotation -= mappedRotationAmt;
+		// }
 	}
 
 	/**
@@ -242,10 +247,10 @@ class Entity extends FlxSprite {
 	 */
 	public function rotateR(_rotationAmount:Float) {
 		var mappedRotationAmt = 0.;
-		//if (_rotationAmount > 0) {
-			mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
-			body.rotation += mappedRotationAmt;
-		//}
+		// if (_rotationAmount > 0) {
+		mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
+		body.rotation += mappedRotationAmt;
+		// }
 	}
 
 	/**
@@ -411,13 +416,15 @@ class Entity extends FlxSprite {
 					#if debug
 					trace('age incremented to ${age}');
 					#end
+
+					if (age == 6) {
+						PlayState.oldenCounter++;
+					}
 				} else {
 					currEnergy = 0;
 					biteAmount = 0;
 
 					color = FlxColor.GREEN;
-
-					PlayState.oldenCounter++;
 
 					#if debug
 					trace('entity died of old age');
