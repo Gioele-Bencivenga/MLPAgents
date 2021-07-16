@@ -234,10 +234,9 @@ class Entity extends FlxSprite {
 	 */
 	public function rotateL(_rotationAmount:Float) {
 		var mappedRotationAmt = 0.;
-		// if (_rotationAmount > 0) {
+		
 		mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
 		body.rotation -= mappedRotationAmt;
-		// }
 	}
 
 	/**
@@ -247,10 +246,9 @@ class Entity extends FlxSprite {
 	 */
 	public function rotateR(_rotationAmount:Float) {
 		var mappedRotationAmt = 0.;
-		// if (_rotationAmount > 0) {
+		
 		mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
 		body.rotation += mappedRotationAmt;
-		// }
 	}
 
 	/**
