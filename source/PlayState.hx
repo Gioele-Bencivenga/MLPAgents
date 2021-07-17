@@ -746,7 +746,7 @@ class PlayState extends FlxState {
 			var newAgent:AutoEntity = null;
 			for (agent in agents) {
 				if (agent.alive && agent.exists) {
-					if (agent.currEnergy <= 1) {
+					if (agent.currEnergy <= 0.5) {
 						var agX = agent.body.x;
 						var agY = agent.body.y;
 						agent.kill(); // kill previous agent

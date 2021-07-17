@@ -234,7 +234,7 @@ class Entity extends FlxSprite {
 	 */
 	public function rotateL(_rotationAmount:Float) {
 		var mappedRotationAmt = 0.;
-		
+
 		mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
 		body.rotation -= mappedRotationAmt;
 	}
@@ -246,7 +246,7 @@ class Entity extends FlxSprite {
 	 */
 	public function rotateR(_rotationAmount:Float) {
 		var mappedRotationAmt = 0.;
-		
+
 		mappedRotationAmt = HxFuncs.map(_rotationAmount, -1, 1, rotationRange.start, rotationRange.end);
 		body.rotation += mappedRotationAmt;
 	}
@@ -385,6 +385,11 @@ class Entity extends FlxSprite {
 			} else {
 				depAmt = currEnergy; // we depleted what was left
 				currEnergy = 0;
+
+				this.remove_from_group(PlayState.collidableBodies);
+				this.remove_from_group(PlayState.entitiesCollGroup);
+				poisonTimer.cancel();
+				body.remove_body();
 			}
 		}
 
@@ -419,7 +424,7 @@ class Entity extends FlxSprite {
 						PlayState.oldenCounter++;
 					}
 				} else {
-					currEnergy = 0;
+					deplete(currEnergy);
 					biteAmount = 0;
 
 					color = FlxColor.GREEN;
@@ -432,14 +437,7 @@ class Entity extends FlxSprite {
 		}
 	}
 
-	/**
-	 * Killing this object will also remove its physics body.
-	 */
 	override function kill() {
-		poisonTimer.cancel();
-		this.remove_from_group(PlayState.collidableBodies);
-		this.remove_from_group(PlayState.entitiesCollGroup);
-		body.remove_body();
 		super.kill();
 	}
 }
