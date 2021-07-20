@@ -26,7 +26,7 @@ class AutoEntity extends Entity {
 	/**
 	 * Number of environment sensors that agents have.
 	 */
-	public static inline final SENSORS_COUNT:Int = 5;
+	public static inline final SENSORS_COUNT:Int = 6;
 
 	/**
 	 * Each sensor can activate up to 5 input neurons: 
@@ -143,8 +143,10 @@ class AutoEntity extends Entity {
 					case 2:
 						lengthVals[2];
 					case 3:
-						lengthVals[1];
+						lengthVals[2];
 					case 4:
+						lengthVals[1];
+					case 5:
 						lengthVals[0];
 					case any:
 						lengthVals[0];
@@ -357,10 +359,12 @@ class AutoEntity extends Entity {
 					case 1:
 						possibleRotations.start + (possibleRotations.end / 2);
 					case 2:
-						possibleRotations.start + possibleRotations.end;
+						possibleRotations.start + (possibleRotations.end / 1.1);
 					case 3:
-						possibleRotations.end + (possibleRotations.start / 2);
+						possibleRotations.end + (possibleRotations.start / 1.1);
 					case 4:
+						possibleRotations.end + (possibleRotations.start / 2);
+					case 5:
 						possibleRotations.end;
 					case any:
 						0;
