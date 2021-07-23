@@ -29,7 +29,7 @@ class AutoEntity extends Entity {
 	public static inline final SENSORS_COUNT:Int = 6;
 
 	/**
-	 * Each sensor can activate up to 5 input neurons: 
+	 * Each sensor can activate these input neurons: 
 	 * - distanceToWall `0..1` distance to wall hit by sensor
 	 * - distanceToEntity `0..1` distance to entity hit by sensor
 	 * - distanceToResource `0..1` distance to resource hit by sensor
@@ -162,7 +162,7 @@ class AutoEntity extends Entity {
 		brain = new MLP(SENSORS_INPUTS // number of input neurons dedicated to sensors
 			+ 1 // own energy level neuron
 			// HIDDEN LAYER
-			, 25 // arbitrary number
+			, 30 // arbitrary number
 			// OUTPUT LAYER
 			, 1 // movement output
 			+ 2 // left/right rotation outputs
@@ -192,8 +192,6 @@ class AutoEntity extends Entity {
 				rotateL(brainOutputs[1]);
 				rotateR(brainOutputs[2]);
 				// controlBite(brainOutputs[3]);
-			} else {
-				currEnergy = 0;
 			}
 		}
 	}
@@ -243,8 +241,6 @@ class AutoEntity extends Entity {
 								sensorInputs[i + SENSORS_COUNT] = 0;
 								sensorInputs[i + (SENSORS_COUNT * 2)] = 0;
 								sensorInputs[i + (SENSORS_COUNT * 3)] = 0;
-							// sensorInputs[i + (SENSORS_COUNT * 4)] = 0;
-							// sensorInputs[i + (SENSORS_COUNT * 5)] = 0;
 							case 2: // hit an agent
 								if (isCamTarget)
 									lineColor = FlxColor.ORANGE;
@@ -254,11 +250,8 @@ class AutoEntity extends Entity {
 								//	1); // put agent's energy amount in entityEnergy neuron
 								// all others are 0
 								sensorInputs[i] = 0;
-								// sensorInputs[i + SENSORS_COUNT] = 0;
 								sensorInputs[i + SENSORS_COUNT * 2] = 0;
 								sensorInputs[i + (SENSORS_COUNT * 3)] = 0;
-							// sensorInputs[i + (SENSORS_COUNT * 4)] = 0;
-							// sensorInputs[i + (SENSORS_COUNT * 5)] = 0;
 							case 3: // hit a resource
 								if (isCamTarget)
 									lineColor = FlxColor.MAGENTA;
@@ -269,9 +262,7 @@ class AutoEntity extends Entity {
 								// all others are 0
 								sensorInputs[i] = 0;
 								sensorInputs[i + SENSORS_COUNT] = 0;
-								// sensorInputs[i + (SENSORS_COUNT * 2)] = 0;
 								sensorInputs[i + (SENSORS_COUNT * 3)] = 0;
-							// sensorInputs[i + (SENSORS_COUNT * 4)] = 0;
 							case 4: // hit a bad resource
 								if (isCamTarget)
 									lineColor = FlxColor.GREEN;
@@ -283,7 +274,6 @@ class AutoEntity extends Entity {
 								sensorInputs[i] = 0;
 								sensorInputs[i + SENSORS_COUNT] = 0;
 								sensorInputs[i + (SENSORS_COUNT * 2)] = 0;
-							// sensorInputs[i + (SENSORS_COUNT * 3)] = 0;
 							case unknown: // hit unknown
 								if (isCamTarget)
 									lineColor = FlxColor.BROWN;
@@ -292,8 +282,6 @@ class AutoEntity extends Entity {
 								sensorInputs[i + SENSORS_COUNT] = 0;
 								sensorInputs[i + (SENSORS_COUNT * 2)] = 0;
 								sensorInputs[i + (SENSORS_COUNT * 3)] = 0;
-								// sensorInputs[i + (SENSORS_COUNT * 4)] = 0;
-								// sensorInputs[i + (SENSORS_COUNT * 5)] = 0;
 						}
 						if (isCamTarget)
 							DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y, lineColor, 2);
@@ -303,8 +291,6 @@ class AutoEntity extends Entity {
 						sensorInputs[i + SENSORS_COUNT] = 0;
 						sensorInputs[i + (SENSORS_COUNT * 2)] = 0;
 						sensorInputs[i + (SENSORS_COUNT * 3)] = 0;
-						// sensorInputs[i + (SENSORS_COUNT * 4)] = 0;
-						// sensorInputs[i + (SENSORS_COUNT * 5)] = 0;
 
 						if (isCamTarget)
 							DebugLine.drawLine(sensors[i].start.x, sensors[i].start.y, sensors[i].end.x, sensors[i].end.y);
@@ -319,8 +305,6 @@ class AutoEntity extends Entity {
 
 				// add input neuron for current own energy level
 				brainInputs = brainInputs.concat([HxFuncs.map(currEnergy, 0, maxEnergy, 0, 1)]);
-			} else {
-				currEnergy = 0;
 			}
 		}
 	}

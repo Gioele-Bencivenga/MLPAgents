@@ -24,3 +24,5 @@ Old age
 - Write down updated table of values, outlining how you've done reproduction, who gets chosen and why, mutated by how much, how many resources and rate of replenishing ecc..
 
 try slower agents when full of energy (fat)
+
+add difference between eaten poison and food to every graph
