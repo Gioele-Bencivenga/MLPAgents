@@ -317,6 +317,7 @@ class PlayState extends FlxState {
 		add(uiView);
 		// wire functions to UI buttons
 		uiView.findComponent("mn_gen_cave", MenuItem).onClick = btn_generateCave_onClick;
+		uiView.findComponent("mn_gen_random", MenuItem).onClick = btn_generateRnd_onClick;
 		uiView.findComponent("mn_clear_world", MenuItem).onClick = btn_clearWorld_onClick;
 		uiView.findComponent("mn_debug_lines", MenuItem).onClick = btn_drawLines_onClick;
 		uiView.findComponent("mn_save_agents", MenuItem).onClick = btn_saveAgents_onClick;
@@ -330,6 +331,57 @@ class PlayState extends FlxState {
 
 	function btn_generateCave_onClick(_) {
 		generateCaveTilemap();
+	}
+
+	function btn_generateRnd_onClick(_){
+		var gen = new Generator(80, 130);
+		var levelData:Array<Array<Int>> = gen.generateRandom(0.17);
+
+		// reset the groups before filling them again
+		emptyGroups([entitiesCollGroup, terrainCollGroup, collidableBodies], agents, resources, badResources);
+
+		// destroy previous world
+		if (FlxEcho.instance != null)
+			FlxEcho.clear();
+		// create world before adding any physics objects
+		FlxEcho.init({
+			x: 0,
+			y: 0,
+			width: levelData[0].length * TILE_SIZE, // Make the size of your Echo world equal the size of your play field
+			height: levelData.length * TILE_SIZE,
+		});
+		FlxEcho.reset_acceleration = true;
+		FlxEcho.updates = simUpdates; // if the sim is paused pause the world too
+		FlxEcho.instance.world.iterations = 1;
+
+		// generate physics bodies for our Tilemap from the levelData - making sure to ignore any tile with the index 2 or 3 so we can create objects out of them later
+		var tiles = TileMap.generate(levelData.flatten2DArray(), TILE_SIZE, TILE_SIZE, levelData[0].length, levelData.length, 0, 0, 1, null, [2, 3]);
+		for (tile in tiles) {
+			var bounds = tile.bounds(); // Get the bounds of the generated physics body to create a Box sprite from it
+			var wallTile = new Tile(bounds.min_x, bounds.min_y, bounds.width.floor(), bounds.height.floor(), FlxColor.fromRGB(230, 240, 245));
+			bounds.put(); // put() the bounds so that they can be reused later. this can really help with memory management
+			// wallTile.set_body(tile); // SHOULD attach the generated body to the FlxObject, doesn't seem to work at the moment so using add_body instead
+			wallTile.add_body({
+				shape: {
+					type: RECT,
+					width: wallTile.width,
+					height: wallTile.height
+				}
+			});
+			wallTile.get_body().mass = 0; // tiles are immovable
+			wallTile.get_body().bodyType = 1; // sensors understand 1 = wall, 2 = entity, 3 = resource...
+			wallTile.add_to_group(terrainCollGroup); // Instead of `group.add(object)` we use `object.add_to_group(group)`
+			wallTile.add_to_group(collidableBodies);
+		}
+
+		/// CANVAS
+		if (canvas != null)
+			canvas.kill(); // kill previous canvas
+		canvas = new FlxSprite();
+		// make new canvas as big as the world
+		canvas.makeGraphic(Std.int(FlxEcho.instance.world.width), Std.int(FlxEcho.instance.world.height), FlxColor.TRANSPARENT, true);
+		canvas.cameras = [simCam];
+		add(canvas);
 	}
 
 	function btn_clearWorld_onClick(_) {
