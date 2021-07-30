@@ -222,7 +222,7 @@ class Entity extends FlxSprite {
 	public function move(_moveAmount:Float) {
 		var mappedMoveAmt = HxFuncs.map(_moveAmount, -1, 1, moveRange.start, moveRange.end);
 
-		mappedMoveAmt += HxFuncs.map(currEnergy, 0, maxEnergy, 4, 0);
+		mappedMoveAmt += HxFuncs.map(currEnergy, 0, maxEnergy, 4, 0); // go faster if energy missing
 
 		body.push(mappedMoveAmt, true, ForceType.POSITION);
 	}

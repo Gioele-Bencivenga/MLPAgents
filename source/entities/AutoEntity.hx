@@ -129,10 +129,12 @@ class AutoEntity extends Entity {
 
 		possibleRotations = new FlxRange(0., 0.);
 
-		var rot = 60.;
+		var rot = 30.;
+		//var rot = 60.;
 		setSensorRotations(-rot, rot);
 
 		var lengthVals = [500, 550, 600];
+		//var lengthVals = [1000, 1050, 1100];
 		sensorsLengths = [
 			for (i in 0...SENSORS_COUNT) {
 				switch (i) {
@@ -160,7 +162,7 @@ class AutoEntity extends Entity {
 		brain = new MLP(SENSORS_INPUTS // number of input neurons dedicated to sensors
 			+ 1 // own energy level neuron
 			// HIDDEN LAYER
-			, 30 // arbitrary number
+			, 25 // arbitrary number
 			// OUTPUT LAYER
 			, 1 // movement output
 			+ 2 // left/right rotation outputs

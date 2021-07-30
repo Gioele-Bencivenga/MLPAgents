@@ -7,19 +7,12 @@ import flixel.input.actions.FlxAction.FlxActionDigital;
 import echo.Body;
 import echo.Line;
 import utilities.DebugLine;
-import echo.shape.Circle;
-import echo.Shape;
-import haxe.ds.Vector;
-import haxe.ds.List;
-import haxe.ui.containers.ListView;
 import flixel.util.FlxTimer;
-import openfl.display.StageQuality;
 import flixel.FlxObject;
 import haxe.ui.themes.Theme;
 import utilities.HxFuncs;
 import entities.AutoEntity;
 import supplies.Supply;
-import flixel.math.FlxMath;
 import haxe.ui.containers.menus.MenuItem;
 import haxe.ui.core.Component;
 import haxe.ui.macros.ComponentMacros;
@@ -477,7 +470,7 @@ class PlayState extends FlxState {
 	}
 
 	function savePopulation() {
-		/*
+		/* re-add csv format library in Project.xml if needed
 			var header = "ID;fitness;energy_eaten;energy_used;connections";
 				var lines:Array<String> = [''];
 				for (i in 0...agents.length) {
@@ -1027,10 +1020,11 @@ class PlayState extends FlxState {
 }
 /**
  * Single point crossover proof.
- * Run on try.haxe.org
+ * Run on https://try.haxe.org
  */ /*
 	class Test {
-	public static inline final CUT_POINT = 9; // change cut point here
+	public static inline final ARRAY_LENGTH = 10;
+	public static inline final CUT_POINT = 4; // change cut point here
 
 	static function main() {
 		var m1:Array<Float> = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
@@ -1039,25 +1033,25 @@ class PlayState extends FlxState {
 	}
 
 	public static function singlePointCrossover(_material1:Array<Float>, _material2:Array<Float>) {
-		trace('m1: ${_material1}');
-		trace('m2: ${_material2}\n');
+		trace('material 1: ${_material1}');
+		trace('material 2: ${_material2}\n');
 		// store correct length in new array
 		var newMaterial = [for (i in 0..._material1.length) 0.];
 		// get random cut point
 		var point = CUT_POINT;
 		// cut away the genes on the right of the point, keep the left genes
 		_material1.resize(point);
-		trace('resize m1: ${_material1}');
+		trace('resized material 1: ${_material1}');
 		// insert each cut gene in place of the previous gene
 		for (i in 0..._material1.length) {
 			_material2[i] = _material1[i];
-			trace('push: ${_material2}');
+			trace('push: m1 into m2 ${_material2}');
 		}
 
 		newMaterial = _material2;
-		trace('m3: ${newMaterial}\n');
+		trace('material 3: ${newMaterial}\n');
 
 		return newMaterial;
 	}
-	}
+}
  */

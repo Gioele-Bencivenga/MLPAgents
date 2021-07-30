@@ -62,8 +62,8 @@
 	<haxelib name="haxeui-flixel" />
 
 	<!-- CSV format library by 0xA3
-		https://github.com/0xA3/xa3.csv -->
-	<haxelib name="xa3.csv" />
+		https://github.com/0xA3/xa3.csv 
+	<haxelib name="xa3.csv" /> -->
 
 	<!-- ______________________________ Haxedefines _____________________________ -->
 
