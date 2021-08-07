@@ -129,8 +129,8 @@ class AutoEntity extends Entity {
 
 		possibleRotations = new FlxRange(0., 0.);
 
-		var rot = 30.;
-		//var rot = 60.;
+		//var rot = 120.;
+		var rot = 60.;
 		setSensorRotations(-rot, rot);
 
 		var lengthVals = [500, 550, 600];
